@@ -18,28 +18,35 @@ unnecessary expand/collapse step.
 
 Approved by the owner on 2026-10-14 (`adopt-premium-design-foundation-and-shell`, spec
 `web-application-shell`), with the corrections of the UX quality gate of the same day (design D25).
-The groups and destinations, in this order:
+Shortened on 2026-10-24 (`reorganize-main-navigation`). The groups and destinations, in this order:
 
-| Group         | Destinations                                                                                              |
-| ------------- | --------------------------------------------------------------------------------------------------------- |
-| Inicio        | Inicio (shown as a loose destination, without a group label)                                              |
-| Ventas        | Facturas, Notas de crédito, Notas de débito                                                               |
-| Compras       | Liquidaciones de compra, Retenciones                                                                      |
-| Logística     | Guías de remisión, Inventario                                                                             |
-| Documentos    | Archivo de comprobantes                                                                                   |
-| Maestros      | Terceros, Productos                                                                                       |
-| Análisis      | Reportes                                                                                                  |
-| Configuración | Usuarios, Empresa, Establecimientos, Firma electrónica, Correos, Catálogos fiscales, Ambiente, Portabilidad de datos |
+| Group          | Destinations                                                                                                         |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Inicio         | Inicio (loose, without a group label)                                                                                |
+| Comprobantes   | Todos los comprobantes, Facturas, Notas de crédito, Notas de débito, Retenciones, Liquidaciones de compra, Guías de remisión |
+| Administración | Clientes y proveedores, Productos, Inventario                                                                        |
+| Reportes       | Reportes (loose, without a group label)                                                                              |
+| Configuración  | Usuarios, Empresa, Establecimientos, Firma electrónica, Correos, Catálogos fiscales, Ambiente, Portabilidad de datos |
+
+- **Layout of the sidebar.** A line (`SidebarSeparator`) separates Inicio, Comprobantes,
+  Administración and the last block, where Reportes and Configuración sit together. A loose group
+  (`loose` in the route model) shows its only destination without a label and does not repeat
+  itself in the breadcrumbs.
+- **Names.** «Todos los comprobantes» (`/comprobantes`, formerly «Archivo de comprobantes») and
+  «Clientes y proveedores» (`/terceros`, formerly «Terceros») are the names in the sidebar, the
+  breadcrumbs, the palette, the screen title and the messages that point to the screen. The routes
+  did not change, and a party can still be a carrier. The data itself is still called «tercero»:
+  the Terceros report, the export sheet and the «Nuevo tercero» breadcrumb.
 
 - **Sales and documents.**
   - **Drafts have no destination of their own** (unify-drafts-into-document-lists, design D6):
     every document list shows its drafts first, with the «Borrador» state and the «Borradores»
     filter. `/borradores` redirects to `/facturas?estado=borradores` (`next.config.ts`); the
     palette finds Facturas by «borradores» or «factura sin emitir».
-  - **Archivo de comprobantes** (`/comprobantes`) is the cross-document archive of every type, and
+  - **Todos los comprobantes** (`/comprobantes`) is the cross-document archive of every type, and
     never shows drafts.
 
-- **Maestros register and correct on a page** (owner decision, 2026-10-17). Terceros and Productos
+- **Parties and products register and correct on a page** (owner decision, 2026-10-17). Clientes y proveedores and Productos
   no longer use a dialog for their long forms:
   - **Routes:** `/terceros/nuevo`, `/terceros/{id}`, `/productos/nuevo` and `/productos/{id}`, with
     `parties.manage` or `products.manage`. «Nuevo tercero» and «Nuevo producto» are links in the
@@ -59,7 +66,7 @@ The groups and destinations, in this order:
 
 - **Mi cuenta** lives in the account menu, not in the sidebar.
 - **Permissions.** Each destination keeps the permission of the earlier navigation. The operator
-  sees every group up to Análisis and, in Configuración, only Catálogos fiscales.
+  sees every group up to Reportes and, in Configuración, only Catálogos fiscales.
 - **Single source.** `frontend/src/lib/navigation/routes.ts` is the only source of:
   - the sidebar and the current destination;
   - the breadcrumbs;
@@ -67,7 +74,7 @@ The groups and destinations, in this order:
   - the forbidden-destination guard.
 
   It holds the groups, the destinations, the internal routes of each destination (detail, new
-  draft, draft, and the form pages of Terceros and Productos) with their final breadcrumb and their
+  draft, draft, and the form pages of parties and products) with their final breadcrumb and their
   permission, and the creation actions. No other component keeps its own map.
 
 ### Breadcrumbs: The Route From Inicio
@@ -76,7 +83,7 @@ The breadcrumbs of the open screen live in the topbar, on its left (owner decisi
 2026-10-16). They replace the breadcrumb row that used to sit above the page title. The topbar does
 not repeat the screen title: the screen's own `h1`, right below, names it.
 - **Trail:** separated with «/»: a house icon linking to Inicio, the navigation
-  group (Ventas, Compras, Logística, Documentos, Maestros, Análisis or Configuración, as text), the
+  group (Comprobantes, Administración or Configuración, as text; Inicio and Reportes have none), the
   destination (a link on an internal screen) and the current page, in the brand colour and
   announced with `aria-current="page"`. On a detail, the last breadcrumb is the record label when
   the screen provides it (the document number, the product name), or the route label. Inicio and Mi
@@ -91,9 +98,9 @@ not repeat the screen title: the screen's own `h1`, right below, names it.
   the first save. Drafts are resumed from the Facturas list.
 
 Examples:
-- Inicio / Ventas / Facturas / 001-001-000000123;
-- Inicio / Ventas / Notas de crédito / Borrador de nota de crédito;
-- Inicio / Ventas / Facturas / Nueva factura;
+- Inicio / Comprobantes / Facturas / 001-001-000000123;
+- Inicio / Comprobantes / Notas de crédito / Borrador de nota de crédito;
+- Inicio / Comprobantes / Facturas / Nueva factura;
 - Inicio / Configuración / Empresa.
 
 ### Configuración in Tabs
@@ -150,8 +157,8 @@ from the reference template's dashboard layout (ADR 0028).
     scrolls just enough to show the current destination if it is outside its visible area. It never
     scrolls the page, does not move when the destination is already fully visible, and does not
     animate with reduced motion (design D23).
-  - **Configuración, one destination** (owner decision, 2026-10-16): a single link at the foot of
-    the sidebar, with the settings icon, to the first section the role sees; it is the current
+  - **Configuración, one destination** (owner decision, 2026-10-16): a single link right after
+    Reportes (since `reorganize-main-navigation`; it used to sit at the foot), with the settings icon, to the first section the role sees; it is the current
     destination on any of its sections. The sections are tabs of one page (see «Configuración in
     tabs» below). The operational groups never fold, so they keep a strong information scent.
   - **Persistence:** the choice is kept in the `sidebar_state` cookie, which the layout reads on the
@@ -236,7 +243,7 @@ from the reference template's dashboard layout (ADR 0028).
     actions), both from the route model.
   - **Filtering:** case- and accent-insensitive, over labels, group names and the synonyms each
     destination declares in the route model (`lib/navigation/palette-filter.ts`). For example,
-    «clientes» finds Terceros, «contraseña» Mi cuenta and «IVA» Catálogos fiscales.
+    «clientes» or «transportista» finds Clientes y proveedores, «contraseña» Mi cuenta and «IVA» Catálogos fiscales.
   - **No invented results:** an invoice number, a customer or a product finds nothing, and the empty
     state says that no screen or action matched, pointing to each screen's own search. It never says
     a record does not exist.

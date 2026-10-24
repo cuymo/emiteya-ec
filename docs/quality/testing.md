@@ -327,7 +327,7 @@ empresas, para que un filtro de tenant faltante falle una prueba (ADR 0009).
         - Configuración plegada fuera de sus pantallas y abierta en ellas;
         - el ambiente visible al desplazar en un teléfono, en Pruebas y en Producción;
         - el alcance declarado y los sinónimos de la paleta, sin resultados inventados;
-        - Ventas sin un destino de borradores y el nombre Archivo de comprobantes;
+        - Comprobantes sin un destino de borradores, con Todos los comprobantes primero;
         - `axe` en la barra colapsada, en Configuración con tema oscuro y en Producción en móvil.
   - **Medición de carga:** `corepack pnpm test:visual:bundle` escribe
     `frontend/test-results/bundle.json` con los bytes de JavaScript, CSS y fuentes de cuatro pantallas

@@ -5,4 +5,4 @@
 
 ## 2. Documentación y revisión
 
-- [ ] 2.1 Actualizar `docs/architecture/navigation-responsive.md` y las demás menciones, y revisar la barra en escritorio, contraída y en el teléfono.
+- [x] 2.1 Actualizar `docs/architecture/navigation-responsive.md` y las demás menciones, y revisar la barra en escritorio, contraída y en el teléfono.

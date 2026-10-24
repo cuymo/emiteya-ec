@@ -520,7 +520,7 @@ guardar y la emisión. Rediseño pedido por el propietario (2026-10-16): el reco
 persona, comprador, productos, pago, total y emitir, no el técnico de guardar para calcular.
 
 - **Lugar.** Pertenece a Facturas antes y después del primer guardado; las migas van en la barra
-  superior («Inicio / Ventas / Facturas / Nueva factura»). El título es «Factura», con el badge
+  superior («Inicio / Comprobantes / Facturas / Nueva factura»). El título es «Factura», con el badge
   «Nueva» hasta el primer guardado y «Borrador» después (`EditorTitle`, decisión del propietario,
   2026-10-22, como en los demás editores). Guardar no vuelve a montar el editor: lleva la
   versión guardada en su estado y, en un borrador nuevo, cambia la dirección a `/borradores/{id}`
