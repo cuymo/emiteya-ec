@@ -30,14 +30,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppDataTable } from "@/components/data-table/app-data-table";
 import { DataTableCard } from "@/components/data-table/data-table-card";
-import { DataTableSelectFilter } from "@/components/data-table/data-table-select-filter";
+import {
+  DataTableSelectFilter,
+  type SelectFilterOption,
+} from "@/components/data-table/data-table-select-filter";
 import { DatePickerField } from "@/components/date-picker-field";
 import { EntityPickerDialog } from "@/components/entity-picker-dialog";
 import { useSession } from "@/components/session";
 import { EmptyState, ErrorState, Skeleton } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import { ApiError } from "@/lib/api";
 import { canSee } from "@/lib/permissions";
 import { useEstablishments, pointLabel } from "@/features/establishments/establishments-api";
@@ -243,6 +245,77 @@ const EXPORT_MESSAGES: Record<string, string> = {
     "Hay otras exportaciones en curso en este momento. Intenta de nuevo en unos segundos.",
 };
 
+/** Un parámetro del reporte se reparte la fila con los demás: al menos 12 rem, a todo el ancho. */
+const FIELD = "w-full md:w-auto md:flex-[1_1_12rem]";
+
+/** Desplegable de un parámetro, del tamaño de «Exportar XLSX» (decisión del propietario, 2026-10-24). */
+function ReportSelect({
+  label,
+  value,
+  options,
+  onChange,
+  allLabel,
+  disabled,
+}: {
+  label: string;
+  value: string;
+  options: SelectFilterOption<string>[];
+  onChange: (value: string) => void;
+  /** La opción que quita el filtro (valor ""); sin ella, las opciones ya incluyen «Todos». */
+  allLabel?: string;
+  disabled?: boolean;
+}) {
+  return allLabel === undefined ? (
+    <DataTableSelectFilter
+      label={label}
+      grow
+      value={value}
+      options={options}
+      onChange={onChange}
+      disabled={disabled}
+    />
+  ) : (
+    <DataTableSelectFilter
+      label={label}
+      grow
+      value={value || undefined}
+      allLabel={allLabel}
+      options={options}
+      onChange={(next) => onChange(next ?? "")}
+      disabled={disabled}
+    />
+  );
+}
+
+/** Una identificación que se escribe, con su etiqueta como texto de ejemplo y para la asistencia. */
+function ReportInput({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className={FIELD}>
+      <Label htmlFor={id} className="sr-only">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        inputMode="numeric"
+        placeholder={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 rounded-lg"
+      />
+    </div>
+  );
+}
+
 export function ReportsScreen() {
   const { me } = useSession();
   const allowed = canSee(me.role, "reports.read");
@@ -352,88 +425,76 @@ export function ReportsScreen() {
 
   const dateFilters = hasDates(url.report) ? (
     <>
-      <div className="flex flex-col gap-1">
-        <Label htmlFor="filtro-mes">Mes</Label>
-        <Select
-          id="filtro-mes"
-          value={selectedMonth ?? ""}
-          onChange={(event) => {
-            const month = event.target.value;
-            if (!month) return url.update({ desde: null, hasta: null });
-            const range = monthRange(month);
-            url.update({ desde: range.from, hasta: range.to });
-          }}
-        >
-          <option value="">{url.from || url.to ? "Rango elegido" : "Todas las fechas"}</option>
-          {months.map((month) => (
-            <option key={month} value={month}>
-              {monthLabel(month)}
-            </option>
-          ))}
-        </Select>
-      </div>
+      <ReportSelect
+        label="Mes"
+        value={selectedMonth ?? ""}
+        allLabel={url.from || url.to ? "Rango elegido" : "Todas las fechas"}
+        options={months.map((month) => ({ value: month, label: monthLabel(month) }))}
+        onChange={(month) => {
+          if (!month) return url.update({ desde: null, hasta: null });
+          const range = monthRange(month);
+          url.update({ desde: range.from, hasta: range.to });
+        }}
+      />
       <DatePickerField
+        compact
         label="Desde"
         value={url.from}
         max={url.to || undefined}
         onChange={(value) => url.update({ desde: value })}
+        className={FIELD}
       />
       <DatePickerField
+        compact
         label="Hasta"
         value={url.to}
         min={url.from || undefined}
         error={rangeError}
         onChange={(value) => url.update({ hasta: value })}
+        className={FIELD}
       />
     </>
   ) : null;
 
   const stateFilter = hasState(url.report) ? (
-    <div className="flex flex-col gap-1">
-      <Label htmlFor="filtro-estado">Estado</Label>
-      <Select
-        id="filtro-estado"
-        value={stateValue}
-        onChange={(event) => url.update({ estado: event.target.value })}
-      >
-        <option value="ALL">Todos</option>
-        {DOCUMENT_STATES.map((state) => (
-          <option key={state} value={state}>
-            {INVOICE_STATE_LABELS[state]}
-          </option>
-        ))}
-      </Select>
-    </div>
+    <ReportSelect
+      label="Estado"
+      value={stateValue}
+      options={[
+        { value: "ALL", label: "Todos" },
+        ...DOCUMENT_STATES.map((state) => ({ value: state, label: INVOICE_STATE_LABELS[state] })),
+      ]}
+      onChange={(value) => url.update({ estado: value })}
+    />
   ) : null;
 
   const environmentFilter = hasEnvironment(url.report) ? (
-    <div className="flex flex-col gap-1">
-      <Label htmlFor="filtro-ambiente">Ambiente</Label>
-      <Select
-        id="filtro-ambiente"
-        value={url.environment ?? ""}
-        onChange={(event) => url.update({ ambiente: event.target.value })}
-      >
-        <option value="">Vigente de la empresa</option>
-        <option value="pruebas">Pruebas</option>
-        <option value="produccion">Producción</option>
-        <option value="todos">Pruebas y Producción</option>
-      </Select>
-    </div>
+    <ReportSelect
+      label="Ambiente"
+      value={url.environment ?? ""}
+      allLabel="Vigente de la empresa"
+      options={[
+        { value: "pruebas", label: "Pruebas" },
+        { value: "produccion", label: "Producción" },
+        { value: "todos", label: "Pruebas y Producción" },
+      ]}
+      onChange={(value) => url.update({ ambiente: value })}
+    />
   ) : null;
 
   const productFilter =
     url.report === "inventory-balances" || url.report === "inventory-movements" ? (
-      <div className="flex flex-col gap-1">
-        <span className="text-sm font-medium" id="filtro-producto">
+      <div className={FIELD}>
+        <span className="sr-only" id="filtro-producto">
           Producto
         </span>
         {url.productId ? (
-          <span className="flex flex-wrap items-center gap-1">
-            <span className="break-words">{productName}</span>
+          <span className="flex h-8 items-center gap-1 rounded-lg border border-input px-2 text-sm max-md:h-11">
+            <PackageSearch aria-hidden="true" className="size-4 shrink-0 text-foreground-muted" />
+            <span className="min-w-0 flex-1 truncate">{productName}</span>
             <Button
               variant="ghost"
-              size="legacy-sm"
+              size="legacy-icon-sm"
               onClick={() => url.update({ producto: null })}
               aria-label="Quitar el filtro de producto"
             >
@@ -443,6 +504,8 @@ export function ReportsScreen() {
         ) : (
           <Button
             variant="outline"
+            size="sm"
+            className="w-full justify-start"
             aria-describedby="filtro-producto"
             onClick={() => setPickerOpen(true)}
           >
@@ -459,55 +522,40 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-tipo">Tipo de comprobante</Label>
-              <Select
-                id="filtro-tipo"
-                value={url.documentType}
-                onChange={(event) => url.update({ tipo: event.target.value })}
-              >
-                <option value="">Todos</option>
-                {EMITTED_DOCUMENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {DOCUMENT_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ReportSelect
+              label="Tipo"
+              value={url.documentType}
+              allLabel="Todos"
+              options={EMITTED_DOCUMENT_TYPES.map((type) => ({
+                value: type,
+                label: DOCUMENT_TYPE_LABELS[type],
+              }))}
+              onChange={(value) => url.update({ tipo: value })}
+            />
             {stateFilter}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-establecimiento">Establecimiento</Label>
-              <Select
-                id="filtro-establecimiento"
-                value={url.establishmentId}
-                onChange={(event) =>
-                  url.update({ establecimiento: event.target.value, punto: null })
-                }
-              >
-                <option value="">Todos</option>
-                {establishmentOptions.map((establishment) => (
-                  <option key={establishment.id} value={establishment.id}>
-                    {establishment.code} · {establishment.address}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-punto">Punto de emisión</Label>
-              <Select
-                id="filtro-punto"
-                value={url.emissionPointId}
-                disabled={!selectedEstablishment}
-                onChange={(event) => url.update({ punto: event.target.value })}
-              >
-                <option value="">Todos</option>
-                {selectedEstablishment?.emissionPoints.map((point) => (
-                  <option key={point.id} value={point.id}>
-                    {pointLabel(selectedEstablishment, point)}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ReportSelect
+              label="Establecimiento"
+              value={url.establishmentId}
+              allLabel="Todos"
+              options={establishmentOptions.map((establishment) => ({
+                value: establishment.id,
+                label: `${establishment.code} · ${establishment.address}`,
+              }))}
+              onChange={(value) => url.update({ establecimiento: value, punto: null })}
+            />
+            <ReportSelect
+              label="Punto de emisión"
+              value={url.emissionPointId}
+              allLabel="Todos"
+              disabled={!selectedEstablishment}
+              options={
+                selectedEstablishment?.emissionPoints.map((point) => ({
+                  value: point.id,
+                  label: pointLabel(selectedEstablishment, point),
+                })) ?? []
+              }
+              onChange={(value) => url.update({ punto: value })}
+            />
             {environmentFilter}
           </>
         );
@@ -515,15 +563,12 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-cliente">Identificación del cliente</Label>
-              <Input
-                id="filtro-cliente"
-                inputMode="numeric"
-                value={customerDraft}
-                onChange={(event) => setCustomerDraft(event.target.value)}
-              />
-            </div>
+            <ReportInput
+              id="filtro-cliente"
+              label="Identificación del cliente"
+              value={customerDraft}
+              onChange={setCustomerDraft}
+            />
             {stateFilter}
             {environmentFilter}
           </>
@@ -532,33 +577,22 @@ export function ReportsScreen() {
         return (
           <>
             {dateFilters}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-sujeto">Identificación del sujeto retenido</Label>
-              <Input
-                id="filtro-sujeto"
-                inputMode="numeric"
-                value={supplierDraft}
-                onChange={(event) => setSupplierDraft(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-periodo">Período fiscal</Label>
-              <Select
-                id="filtro-periodo"
-                value={url.period}
-                onChange={(event) => url.update({ periodo: event.target.value })}
-              >
-                <option value="">Todos</option>
-                {(url.period && !months.includes(url.period)
-                  ? [url.period, ...months]
-                  : months
-                ).map((month) => (
-                  <option key={month} value={month}>
-                    {monthLabel(month)}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ReportInput
+              id="filtro-sujeto"
+              label="Identificación del sujeto retenido"
+              value={supplierDraft}
+              onChange={setSupplierDraft}
+            />
+            <ReportSelect
+              label="Período fiscal"
+              value={url.period}
+              allLabel="Todos"
+              options={(url.period && !months.includes(url.period)
+                ? [url.period, ...months]
+                : months
+              ).map((month) => ({ value: month, label: monthLabel(month) }))}
+              onChange={(value) => url.update({ periodo: value })}
+            />
             {stateFilter}
             {environmentFilter}
           </>
@@ -570,62 +604,44 @@ export function ReportsScreen() {
           <>
             {productFilter}
             {dateFilters}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-movimiento">Tipo de movimiento</Label>
-              <Select
-                id="filtro-movimiento"
-                value={url.movementType}
-                onChange={(event) => url.update({ movimiento: event.target.value })}
-              >
-                <option value="">Todos</option>
-                {STOCK_MOVEMENT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {STOCK_MOVEMENT_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <ReportSelect
+              label="Tipo de movimiento"
+              value={url.movementType}
+              allLabel="Todos"
+              options={STOCK_MOVEMENT_TYPES.map((type) => ({
+                value: type,
+                label: STOCK_MOVEMENT_TYPE_LABELS[type],
+              }))}
+              onChange={(value) => url.update({ movimiento: value })}
+            />
           </>
         );
       case "parties":
         return (
           <>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-rol">Rol</Label>
-              <Select
-                id="filtro-rol"
-                value={url.role}
-                onChange={(event) => url.update({ rol: event.target.value })}
-              >
-                <option value="">Todos</option>
-                {PARTY_ROLES.map((role) => (
-                  <option key={role} value={role}>
-                    {PARTY_ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-identificacion">Identificación</Label>
-              <Input
-                id="filtro-identificacion"
-                inputMode="numeric"
-                value={identificationDraft}
-                onChange={(event) => setIdentificationDraft(event.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="filtro-estado-tercero">Estado</Label>
-              <Select
-                id="filtro-estado-tercero"
-                value={stateValue}
-                onChange={(event) => url.update({ estado: event.target.value })}
-              >
-                <option value="ACTIVE">Activos</option>
-                <option value="INACTIVE">Inactivos</option>
-                <option value="ALL">Todos</option>
-              </Select>
-            </div>
+            <ReportSelect
+              label="Rol"
+              value={url.role}
+              allLabel="Todos"
+              options={PARTY_ROLES.map((role) => ({ value: role, label: PARTY_ROLE_LABELS[role] }))}
+              onChange={(value) => url.update({ rol: value })}
+            />
+            <ReportInput
+              id="filtro-identificacion"
+              label="Identificación"
+              value={identificationDraft}
+              onChange={setIdentificationDraft}
+            />
+            <ReportSelect
+              label="Estado"
+              value={stateValue}
+              options={[
+                { value: "ACTIVE", label: "Activos" },
+                { value: "INACTIVE", label: "Inactivos" },
+                { value: "ALL", label: "Todos" },
+              ]}
+              onChange={(value) => url.update({ estado: value })}
+            />
           </>
         );
     }
@@ -666,21 +682,40 @@ export function ReportsScreen() {
       <DataTableCard
         {...CARD}
         actions={
-          canExport ? (
-            <Button
-              size="sm"
-              onClick={runExport}
-              disabled={exportReport.isPending || rangeError !== null || report.isPending}
-              aria-busy={exportReport.isPending}
-            >
-              {exportReport.isPending ? (
-                <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" />
-              ) : (
-                <Download aria-hidden="true" />
-              )}
-              {exportReport.isPending ? "Generando XLSX…" : "Exportar XLSX"}
-            </Button>
-          ) : null
+          <>
+            {/* El reporte y su vista, a la izquierda de «Exportar XLSX» y de su tamaño
+                (decisión del propietario, 2026-10-24). */}
+            <DataTableSelectFilter<ReportParam>
+              label="Reporte"
+              value={url.reportParam}
+              options={REPORT_OPTIONS}
+              onChange={chooseReport}
+            />
+            {url.reportParam === "inventario" ? (
+              <DataTableSelectFilter<InventoryView>
+                label="Vista"
+                value={url.view}
+                options={INVENTORY_VIEWS}
+                onChange={(view) => url.update({ ...cleared, vista: view })}
+              />
+            ) : null}
+            {canExport ? (
+              <Button
+                size="sm"
+                className="max-md:w-full"
+                onClick={runExport}
+                disabled={exportReport.isPending || rangeError !== null || report.isPending}
+                aria-busy={exportReport.isPending}
+              >
+                {exportReport.isPending ? (
+                  <LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" />
+                ) : (
+                  <Download aria-hidden="true" />
+                )}
+                {exportReport.isPending ? "Generando XLSX…" : "Exportar XLSX"}
+              </Button>
+            ) : null}
+          </>
         }
         lead={
           <div className="flex flex-col gap-2 empty:hidden">
@@ -700,20 +735,6 @@ export function ReportsScreen() {
         }
         filters={
           <>
-            <DataTableSelectFilter<ReportParam>
-              label="Reporte"
-              value={url.reportParam}
-              options={REPORT_OPTIONS}
-              onChange={chooseReport}
-            />
-            {url.reportParam === "inventario" ? (
-              <DataTableSelectFilter<InventoryView>
-                label="Vista"
-                value={url.view}
-                options={INVENTORY_VIEWS}
-                onChange={(view) => url.update({ ...cleared, vista: view })}
-              />
-            ) : null}
             <p className="text-sm text-foreground-muted" aria-live="polite">
               <span className="font-medium text-foreground tabular-nums">
                 {new Intl.NumberFormat("es-EC").format(total)}
@@ -723,8 +744,8 @@ export function ReportsScreen() {
                 ? ` · Ambiente: ${REPORT_ENVIRONMENT_LABELS[effectiveEnvironment]}`
                 : null}
             </p>
-            {/* Los parámetros del reporte son campos con etiqueta (fechas, identificaciones,
-                producto): en un teléfono se pliegan tras «Filtros». */}
+            {/* Los parámetros del reporte, del tamaño de «Exportar XLSX», se reparten la fila
+                (decisión del propietario, 2026-10-24); en un teléfono se pliegan tras «Filtros». */}
             <div className="flex w-full flex-col gap-3">
               <Button
                 variant="outline"
@@ -739,7 +760,7 @@ export function ReportsScreen() {
               </Button>
               <div
                 id="filtros-reporte"
-                className={`${filtersOpen ? "grid" : "hidden"} grid-cols-1 gap-2 sm:grid-cols-2 md:grid md:grid-cols-3 xl:grid-cols-4`}
+                className={`${filtersOpen ? "flex" : "hidden"} flex-col gap-2 md:flex md:flex-row md:flex-wrap`}
               >
                 {reportFilters}
               </div>

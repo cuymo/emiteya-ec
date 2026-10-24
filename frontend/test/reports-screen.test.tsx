@@ -267,21 +267,24 @@ describe("Reportes", () => {
     expect(requested(calls, "GET /api/v1/reports/invoices")[0]).toBe(
       "GET /api/v1/reports/invoices?customerIdentification=0102030405&state=NOT_AUTHORIZED&environment=ALL&page=1&pageSize=25",
     );
-    const month = screen.getByLabelText("Mes");
-    const option = within(month).getAllByRole("option")[2]!;
-    fireEvent.change(month, { target: { value: (option as HTMLOptionElement).value } });
+    // El atajo mensual es un desplegable con prefijo, del tamaño de «Exportar XLSX».
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("combobox", { name: "Mes" }));
+    const options = await screen.findAllByRole("option");
+    expect(options[0]!.textContent).toBe("Todas las fechas");
+    await user.click(options[2]!);
     const [, args] = [null, navigation.replace.mock.calls.at(-1)];
     const query = new URLSearchParams(String(args?.[0]).split("?")[1]);
-    const value = (option as HTMLOptionElement).value;
-    expect(query.get("desde")).toBe(`${value}-01`);
-    expect(query.get("hasta")?.startsWith(value)).toBe(true);
+    const from = query.get("desde")!;
+    expect(from).toMatch(/^\d{4}-\d{2}-01$/);
+    expect(query.get("hasta")?.startsWith(from.slice(0, 7))).toBe(true);
     expect(query.get("cliente")).toBe("0102030405");
   });
 
   it("muestra los estados por defecto: todos en Documentos emitidos, autorizados en Facturas", async () => {
     const issued = render({ "GET /api/v1/reports/issued-documents": paged([document()]) });
     await screen.findByRole("table", { name: "Documentos emitidos" });
-    expect((screen.getByLabelText("Estado") as HTMLSelectElement).value).toBe("ALL");
+    expect(screen.getByRole("combobox", { name: "Estado" }).textContent).toContain("Todos");
     // Sin elegir, el estado no viaja: lo aplica el servidor.
     expect(requested(issued, "GET /api/v1/reports/issued-documents")[0]).toBe(
       "GET /api/v1/reports/issued-documents?page=1&pageSize=25",
@@ -292,7 +295,7 @@ describe("Reportes", () => {
     navigation.search = new URLSearchParams("reporte=retenciones");
     render({ "GET /api/v1/reports/withholdings": paged([]) });
     await screen.findAllByText("Todavía no hay registros");
-    expect((screen.getByLabelText("Estado") as HTMLSelectElement).value).toBe("AUTHORIZED");
+    expect(screen.getByRole("combobox", { name: "Estado" }).textContent).toContain("Autorizado");
   });
 
   it("exporta con los filtros de la URL y el ambiente efectivo de la lista", async () => {
@@ -334,5 +337,33 @@ describe("Reportes", () => {
     await waitFor(() =>
       expect(screen.getByRole("alert").textContent).toContain("Intenta de nuevo en unos segundos"),
     );
+  });
+});
+
+describe("tamaño de los parámetros (decisión del propietario, 2026-10-24)", () => {
+  it("el reporte va a la izquierda de «Exportar XLSX» y los parámetros miden lo mismo que el botón", async () => {
+    render({ "GET /api/v1/reports/issued-documents": paged([document()]) });
+    await screen.findByRole("table", { name: "Documentos emitidos" });
+    const report = screen.getByRole("combobox", { name: "Reporte" });
+    const exportButton = screen.getByRole("button", { name: "Exportar XLSX" });
+    expect(report.parentElement).toBe(exportButton.parentElement);
+    expect(
+      report.compareDocumentPosition(exportButton) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(report.getAttribute("data-size")).toBe("sm");
+    expect(exportButton.getAttribute("data-size")).toBe("sm");
+    for (const name of [
+      "Mes",
+      "Tipo",
+      "Estado",
+      "Establecimiento",
+      "Punto de emisión",
+      "Ambiente",
+    ]) {
+      const control = screen.getByRole("combobox", { name });
+      expect(control.getAttribute("data-size"), name).toBe("sm");
+      expect(control.className, name).toContain("md:flex-[1_1_12rem]");
+    }
+    expect(screen.getByRole("button", { name: /^Desde/ }).className).toContain("h-8");
   });
 });

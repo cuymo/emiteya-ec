@@ -132,10 +132,16 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 
 - **Ruta y permisos:** `/reportes`, en el grupo "Operación" de la navegación, con `reports.read`. "Exportar XLSX" solo aparece con `reports.export`. Sin el permiso, o ante un `403`, la pantalla lo explica sin listar nada.
 - **Elegir el reporte:**
-  - el selector "Reporte" con los cinco reportes;
-  - en Inventario, la vista Existencias o Movimientos.
+  - el selector "Reporte" con los cinco reportes, en la cabecera, a la izquierda de "Exportar XLSX"
+    y de su mismo tamaño (decisión del propietario, 2026-10-24);
+  - en Inventario, la vista Existencias o Movimientos, junto a él.
 
   Cambiar de reporte o de vista limpia los filtros.
+- **Parámetros del reporte:** todos del tamaño de "Exportar XLSX" (decisión del propietario,
+  2026-10-24). Los desplegables llevan su nombre como prefijo ("Estado: Todos"), y las fechas y las
+  identificaciones son campos compactos con su nombre como texto de ejemplo. Se reparten la fila, al
+  menos 12 rem cada uno, y los que no caben pasan a otra fila que también la llena. En un teléfono se
+  pliegan tras "Filtros".
 - **Filtros en la URL:** `reporte`, `vista`, `desde`, `hasta`, `tipo`, `estado`, `establecimiento`, `punto`, `ambiente` (`pruebas`, `produccion` o `todos`), `cliente`, `sujeto`, `periodo` (`AAAA-MM`), `producto`, `movimiento`, `rol`, `identificacion`, `pagina` y `filas`.
   - El atajo "Mes" solo fija `desde` y `hasta`, con el mes en curso y los once anteriores.
   - El producto se elige con un buscador, nunca escribiendo un identificador.

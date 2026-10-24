@@ -373,6 +373,46 @@ function reply(
       ];
       return { status: 200, body: { data, meta: { page: 1, pageSize: 25, total: data.length } } };
     }
+    // Reportes (decisión del propietario, 2026-10-24): documentos emitidos de la empresa.
+    case "GET /api/v1/reports/issued-documents": {
+      const data = [
+        [
+          "001-001-000000123",
+          "01",
+          "EL PERNO CIA. LTDA.",
+          "0992877878001",
+          "25.00",
+          "3.75",
+          "28.75",
+        ],
+        [
+          "001-001-000000122",
+          "01",
+          "Comercial Andina S.A.",
+          "1790012345001",
+          "1086.96",
+          "163.04",
+          "1250.00",
+        ],
+        ["001-001-000000013", "04", "María José Paredes", "0102030405", "39.22", "5.88", "45.10"],
+      ].map(([number, documentType, name, identification, subtotal, taxes, total], index) => ({
+        id: `rep-${index}`,
+        issueDate: "2026-10-14",
+        documentType,
+        number,
+        counterpart: { identification, name },
+        recipientCount: null,
+        subtotal,
+        taxes,
+        total,
+        state: "AUTHORIZED",
+        environment,
+      }));
+      return {
+        status: 200,
+        body: { data, meta: { page: 1, pageSize: 25, total: data.length, environment } },
+      };
+    }
     case "GET /api/v1/invoices":
       return invoiceList(scenario.invoices ?? (INVOICES as InvoiceSummary[]), query);
     case "GET /api/v1/invoices/entries":

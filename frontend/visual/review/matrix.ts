@@ -449,6 +449,20 @@ export const STATES: State[] = [
       await shows(page, "001-001-000000123");
     },
   },
+  // Reportes (decisión del propietario, 2026-10-24): el reporte junto a «Exportar XLSX» y los
+  // parámetros del tamaño del botón.
+  {
+    route: "reportes",
+    state: "parametros",
+    path: "/reportes",
+    group: "listas",
+    widths: ["1440", "1024", "390"],
+    viewportOnly: true,
+    ready: async (page) => {
+      await heading(page, "Reportes");
+      await shows(page, "001-001-000000123");
+    },
+  },
   // La marca (add-brand-logo): el logo en el inicio de sesión y en la cabecera de la barra lateral.
   {
     route: "iniciar-sesion",
