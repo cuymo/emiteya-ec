@@ -84,6 +84,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | Aritmética decimal | `decimal.js` 10.6.0, versión exacta | Importes y tarifas exactos detrás de `platform/decimal`; es la biblioteca que Prisma usa para `Decimal`. Ningún importe pasa por `number` (`decimal-policy.md`). |
 | Correo SMTP | `nodemailer` 10.2.1, versión exacta (MIT-0, sin dependencias, con sus tipos) | Entrega por correo del XML y el RIDE con el servidor SMTP de cada empresa, detrás del puerto `MailTransport` del módulo `email`: un transporte por envío, TLS con certificado verificado y TLS 1.2 o superior (ADR 0029). |
 | Pruebas del correo | `smtp-server` 3.21.1, solo de desarrollo (MIT-0) | Servidor SMTP falso en proceso para las pruebas de integración del transporte y del envío (ADR 0029). El buzón de pruebas del despliegue de revisión es Mailpit, fuera del código. |
+| Recorrido de bienvenida | `driver.js` 1.10.2, versión exacta (MIT, sin dependencias, con sus tipos) | Resalta y explica los elementos del recorrido de la primera visita, solo en `frontend/src/features/onboarding/`, con textos fijos y la hoja ajustada a los tokens (ADR 0030). |
 | pnpm | 12.4.2 vía Corepack | `packageManager`; configuración en `pnpm-workspace.yaml`. |
 | TypeScript | 6.0.3 | `typescript-eslint` no admite todavía la 7. |
 | ESLint / typescript-eslint | 10.11.0 / 8.71.0 | Frontend sin `eslint-config-next` (ADR 0016). |
