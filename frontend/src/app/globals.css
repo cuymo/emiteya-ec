@@ -454,7 +454,7 @@ html:has([data-slot="sticky-form-actions"]) {
   border-radius: calc(var(--radius) + 4px);
   background: var(--popover);
   color: var(--popover-foreground);
-  box-shadow: 0 10px 30px -10px oklch(0 0 0 / 0.35);
+  box-shadow: 0 10px 30px -10px color-mix(in oklch, var(--foreground) 35%, transparent);
   padding: 1rem;
   font-family: inherit;
 }

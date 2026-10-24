@@ -42,7 +42,10 @@ describe("teclado del shell", () => {
     await screen.findByRole("menu");
     // Al abrir con el teclado, el foco va al primer ítem.
     await waitFor(() => expect(document.activeElement?.textContent).toContain("Mi cuenta"));
-    // Sin grupo de tema: la flecha lleva de «Mi cuenta» a «Cerrar sesión».
+    // Sin grupo de tema: la flecha lleva de «Mi cuenta» a «Ver recorrido» (add-onboarding-tour) y
+    // después a «Cerrar sesión».
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement?.textContent).toContain("Ver recorrido");
     await user.keyboard("{ArrowDown}");
     expect(document.activeElement?.textContent).toContain("Cerrar sesión");
     await user.keyboard("{End}");
