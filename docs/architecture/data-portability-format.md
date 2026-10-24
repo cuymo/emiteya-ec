@@ -201,13 +201,16 @@ Seis libros XLSX escritos con el escritor compartido (`platform/xlsx/`, ADR 0023
 | Identificación | Texto |
 | Razón social | Texto |
 | Dirección | Texto |
-| Correo | Texto: los correos del tercero en su orden, separados por comas (hasta tres; `add-email-delivery`) |
+| Correo | Texto |
 | Teléfono | Texto |
 | Roles | Texto |
 | Estado | Texto |
 | Registro del sistema | Texto |
 | Creado | Momento (hora de Ecuador) |
 | Actualizado | Momento (hora de Ecuador) |
+
+«Correo» lleva los correos del tercero en su orden, separados por comas (hasta tres;
+`add-email-delivery`).
 
 ### `data/productos.xlsx`
 
