@@ -23,9 +23,9 @@ afterEach(() => {
 });
 
 describe("nombre del producto", () => {
-  it("el título de cada una de las 43 pantallas termina en «· EmiteYa»", () => {
+  it("el título de cada una de las 45 pantallas termina en «· EmiteYa»", () => {
     const pages = files(join(SRC, "app"), (name) => name === "page.tsx");
-    expect(pages).toHaveLength(43);
+    expect(pages).toHaveLength(45);
     for (const page of pages) {
       const title = /title:\s*"([^"]+)"/.exec(readFileSync(page, "utf8"))?.[1];
       expect(title, page).toMatch(/ · EmiteYa$/);
