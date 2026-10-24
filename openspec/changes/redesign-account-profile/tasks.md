@@ -2,7 +2,7 @@
 
 ## 1. Inspección de imágenes compartida
 
-- [ ] 1.1 Mover la inspección de PNG/JPEG de `taxpayer/domain/logo.ts` a `backend/src/platform/images/` como inspección genérica (formato por contenido, 4096 px por lado), y hacer que el logo la use sin cambiar su comportamiento; verificar con las pruebas existentes del logo y unas pruebas unitarias nuevas de la inspección (PNG, JPEG, SVG, GIF, firma falsa, dimensiones excesivas).
+- [x] 1.1 Mover la inspección de PNG/JPEG de `taxpayer/domain/logo.ts` a `backend/src/platform/images/` como inspección genérica (formato por contenido, 4096 px por lado), y hacer que el logo la use sin cambiar su comportamiento; verificar con las pruebas existentes del logo y unas pruebas unitarias nuevas de la inspección (PNG, JPEG, SVG, GIF, firma falsa, dimensiones excesivas).
 
 ## 2. Datos del avatar y configuración
 
