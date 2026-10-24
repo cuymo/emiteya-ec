@@ -128,6 +128,16 @@ Brief de la pantalla:
   propietario, 2026-10-22). Teclado: las pestañas con flechas; «Cambiar foto» y «Quitar foto»
   enfocables.
 
+### D8b. El avatar en el menú de cuenta (decisión del propietario, 2026-10-24)
+
+- Al abrir el menú de cuenta, su encabezado muestra el avatar (o las iniciales) a la izquierda del
+  nombre, el correo y el rol. El botón de la barra superior conserva el icono del establecimiento.
+- El menú lee la versión del avatar de `GET /me/profile` solo cuando se abre, con la misma consulta
+  que la página de perfil; `GET /me` no cambia.
+- Mientras no llega, o sin avatar, se ven las iniciales: el menú nunca espera la imagen.
+- Hasta la página de perfil con pestañas, la «Mi cuenta» actual lleva una sección «Foto de perfil»
+  con el avatar, «Cambiar foto» y «Quitar foto»; la cabecera del perfil la reemplaza después.
+
 ### D9. Sesión y nombre
 
 - Al guardar el nombre, el frontend invalida la consulta de la sesión (`/me`) y la del perfil: la

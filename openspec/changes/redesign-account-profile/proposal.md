@@ -17,18 +17,26 @@ usuario, administrador u operador, edite su nombre, cargue su foto y cambie su c
 - Nuevo: cada usuario autenticado puede cambiar su propio nombre. El cambio queda en la auditoría y
   el nombre nuevo se ve en el resto de la aplicación (la barra superior, la lista de Usuarios).
 - Nuevo: cada usuario puede cargar, reemplazar y quitar su propio avatar (PNG o JPEG, con un tamaño
-  máximo configurable). El avatar se ve solo en su página de perfil: nadie más lo consulta, ni otro
+  máximo configurable). El avatar se ve solo en su página de perfil y dentro de su propio menú de
+  cuenta, junto a su nombre (decisión del propietario, 2026-10-24): nadie más lo consulta, ni otro
   usuario de su empresa, ni un administrador, ni otra empresa.
 - El cambio de contraseña, que ya existe, se integra sin cambios en la pestaña «Seguridad».
 - El punto de emisión predeterminado, que ya existe, se integra sin cambios en «Preferencias».
+
+## Orden
+
+El propietario pidió primero el avatar (2026-10-24): la inspección compartida, sus datos, su API, la
+consulta del perfil que da su versión, la foto en la «Mi cuenta» actual y el avatar en el menú de
+cuenta. El cambio del nombre y la página de perfil con pestañas siguen después, en este mismo cambio.
 
 ## Fuera de alcance
 
 - Cambiar el correo de inicio de sesión: queda pospuesto hasta que el sistema envíe correos y pueda
   confirmar el correo nuevo (decisión del propietario, 2026-10-23; Q-24). Ni el usuario ni un
   administrador pueden cambiarlo en este cambio.
-- Mostrar el avatar fuera del perfil: ni en la barra superior, ni en la lista de Usuarios, ni en los
-  comprobantes o el RIDE (decisión del propietario, 2026-10-23).
+- Mostrar el avatar fuera del perfil y del menú de cuenta: ni en el botón de la barra superior, que
+  conserva el icono del establecimiento, ni en la lista de Usuarios, ni en los comprobantes o el RIDE
+  (decisiones del propietario, 2026-10-23 y 2026-10-24).
 - Que un administrador cambie el nombre o el avatar de otro usuario.
 - Incluir el avatar en el paquete de portabilidad: el paquete conserva de los usuarios solo su
   nombre, su correo, su rol y su estado.

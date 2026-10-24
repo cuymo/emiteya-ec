@@ -86,9 +86,18 @@ una imagen PNG o JPEG, reconocida por su contenido, de un tamaño máximo config
 - **THEN** el usuario queda con un solo avatar, esa imagen
 
 ### Requirement: Avatar privado del usuario
-El avatar de un usuario SHALL verse solo en su propia página de perfil. Ningún otro usuario, de su
-empresa o de otra, con cualquier rol, SHALL poder consultarlo, cambiarlo, quitarlo ni saber si
-existe.
+El avatar de un usuario SHALL verse solo en su propia página de perfil y dentro de su propio menú
+de cuenta, junto a su nombre; el botón del menú en la barra superior no lo muestra. Ningún otro
+usuario, de su empresa o de otra, con cualquier rol, SHALL poder consultarlo, cambiarlo, quitarlo ni
+saber si existe.
+
+#### Scenario: Menú de cuenta
+- **WHEN** un usuario con avatar abre su menú de cuenta
+- **THEN** ve su avatar junto a su nombre, su correo y su rol, y el botón de la barra superior sigue mostrando el icono del establecimiento
+
+#### Scenario: Menú de cuenta sin avatar
+- **WHEN** un usuario sin avatar abre su menú de cuenta
+- **THEN** ve sus iniciales en el lugar del avatar
 
 #### Scenario: Administrador de la misma empresa
 - **WHEN** un administrador intenta consultar o quitar el avatar de un operador de su empresa
