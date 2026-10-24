@@ -353,7 +353,13 @@ html:has([data-slot="sticky-form-actions"]) {
      al enfocarse: sin contorno, sin halo y con su mismo borde (decisión del propietario, 2026-10-24,
      que reemplaza el borde gris del mismo día). El cursor de texto marca el campo activo; los
      botones, las pestañas y los enlaces conservan su contorno azul. */
-  :is(input, textarea, select, [data-slot="select-trigger"], [data-slot="date-picker-trigger"]):focus-visible {
+  :is(
+    input,
+    textarea,
+    select,
+    [data-slot="select-trigger"],
+    [data-slot="date-picker-trigger"]
+  ):focus-visible {
     outline: none;
     box-shadow: none;
   }
