@@ -1,87 +1,112 @@
 # EmiteYa
 
-Facturador electrónico open source y self-hosted para contribuyentes ecuatorianos: configura un
-contribuyente y emite, conserva, envía por correo y exporta los seis comprobantes electrónicos del
-SRI en el esquema off-line. No es un ERP, un POS ni un sistema contable.
+**Facturador electrónico open source y self-hosted para Ecuador.** Emite, conserva, envía por
+correo y exporta los seis comprobantes electrónicos del SRI en el esquema off-line, desde tu propio
+servidor. No es un ERP, un POS ni un sistema contable.
 
 ![Inicio de EmiteYa: indicadores del mes, ventas de seis meses, comprobantes por tipo, mejores clientes y productos, estado de facturación electrónica y últimos comprobantes](docs/assets/emiteya-inicio.png)
 
 <sub>Captura con datos de demostración de una empresa ficticia.</sub>
 
-**Estado:** la aplicación está completa para su primera versión pública (`CHANGELOG.md`). Quedó
-certificada en el ambiente de Pruebas del SRI el 2026-10-11, con los siete comprobantes de la
-matriz autorizados (`docs/quality/sri-certification.md`). La transmisión al SRI viene apagada
-(`SRI_TRANSMISSION_ENABLED=0`): habilitar el ambiente de Producción es una decisión de cada
-instalación, con su propia firma electrónica y la lista de la sección «Fuera de este runbook:
-go-live» de ese documento. El alcance de v1 es el uso propio o el suministro no comercial
-(`docs/product/overview.md`).
+## Contenido
 
-El contexto del producto está en `docs/product/` y la arquitectura en `ARCHITECTURE.md` y
-`docs/architecture/`.
+- [Qué hace](#qué-hace)
+- [Estado](#estado)
+- [Inicio rápido](#inicio-rápido)
+- [Despliegue en producción](#despliegue-en-producción)
+- [Verificación](#verificación)
+- [Documentación](#documentación)
+- [Créditos](#créditos)
+- [Contribuir y seguridad](#contribuir-y-seguridad)
+- [Licencia](#licencia)
 
-## Requisitos
+## Qué hace
+
+- **Los seis comprobantes del SRI:** factura, nota de crédito, nota de débito, comprobante de
+  retención, guía de remisión y liquidación de compra, con borradores editables, clave de acceso,
+  XML validado contra el XSD oficial y firma electrónica XAdES-BES.
+- **Transmisión al SRI** con recepción y autorización asíncronas, reconciliación de resultados
+  inciertos y detección de anulaciones.
+- **Entrega por correo** del XML autorizado y el RIDE en PDF, con el servidor SMTP de cada
+  empresa, reintentos y reenvío.
+- **Empresa y catálogos:** establecimientos, puntos de emisión, numeración auditada, firma
+  electrónica custodiada con cifrado, catálogos fiscales oficiales, clientes y proveedores,
+  productos e inventario opcional.
+- **Operación diaria:** tablero de Inicio, bandeja de todos los comprobantes, reportes en XLSX,
+  portabilidad completa de los datos, usuarios con roles y auditoría.
+
+El detalle de cada versión está en [`CHANGELOG.md`](CHANGELOG.md).
+
+## Estado
+
+- **Primera versión pública** completa.
+- **Certificada en el ambiente de Pruebas del SRI** el 2026-10-11, con los siete comprobantes de
+  la matriz autorizados ([`docs/quality/sri-certification.md`](docs/quality/sri-certification.md)).
+- **La transmisión al SRI viene apagada** (`SRI_TRANSMISSION_ENABLED=0`). Habilitar Producción es
+  una decisión de cada instalación, con su propia firma electrónica y la lista «Fuera de este
+  runbook: go-live» de ese documento.
+- **Alcance de v1:** uso propio o suministro no comercial
+  ([`docs/product/overview.md`](docs/product/overview.md)).
+
+## Inicio rápido
+
+### Requisitos
 
 - Node.js 24 LTS (`.node-version` indica la versión probada).
-- Corepack, incluido con Node.js. El proyecto usa pnpm con la versión fijada en `package.json`; no uses npm ni yarn.
-- Docker con Docker Compose, para PostgreSQL en desarrollo.
+- Corepack, incluido con Node.js. El proyecto usa pnpm con la versión fijada en `package.json`;
+  no uses npm ni yarn.
+- Docker con Docker Compose, para PostgreSQL.
 
-## Instalación desde cero
+### Instalar y levantar
 
 ```bash
 corepack enable
 corepack pnpm install
-```
 
-## Base de datos local
-
-PostgreSQL 17 corre en Docker Compose con dos bases: `facturador_dev` para desarrollo y
-`facturador_test` para las pruebas de integración.
-
-```bash
+# PostgreSQL 17 en Docker: facturador_dev (desarrollo) y facturador_test (pruebas)
 docker compose up -d --wait
 cp backend/.env.example backend/.env
 corepack pnpm --filter @facturador/backend db:migrate:deploy
-corepack pnpm --filter @facturador/backend db:status
-```
 
-- `POSTGRES_PORT` cambia el puerto local (por defecto 5432); ajusta entonces las URLs de `backend/.env`.
-- `db:status` informa el estado de las migraciones una vez inicializada la base con `db:migrate:deploy`.
-- Para crear una migración a partir de cambios en `backend/prisma/schema.prisma`:
-  `corepack pnpm --filter @facturador/backend db:migrate:dev --name <nombre>`.
-- El cliente de Prisma se genera en `backend/src/generated/prisma/` (no versionado) al instalar, y con `db:generate`.
-- Para regenerar los modelos de Better Auth tras cambiar sus plugins o su versión:
-  `corepack pnpm --filter @facturador/backend db:auth-schema` (ver `docs/architecture/database.md`).
-
-### Comandos destructivos de Prisma
-
-`prisma migrate reset`, `prisma db push --accept-data-loss` y equivalentes borran datos.
-Ningún script del proyecto los usa. Solo los ejecuta una persona, de forma explícita, y un
-agente nunca los ejecuta sin el consentimiento expreso del usuario. Prisma bloquea estos
-comandos cuando detecta que los lanza un agente sin ese consentimiento.
-
-## Desarrollo local
-
-Con PostgreSQL en marcha y `backend/.env` creado (ver la sección anterior):
-
-```bash
 corepack pnpm dev
 ```
 
+El primer arranque crea la empresa y el administrador inicial con `INITIAL_USER_EMAIL` e
+`INITIAL_USER_PASSWORD` de `backend/.env`; con ellos inicias sesión en http://localhost:3000.
+
 | Servicio | URL |
 | --- | --- |
-| Frontend (Next.js) | http://localhost:3000 |
-| API, a través del frontend (mismo origen) | http://localhost:3000/api/v1/… |
+| Interfaz (Next.js) | http://localhost:3000 |
+| API, a través de la interfaz (mismo origen) | http://localhost:3000/api/v1/… |
 | Backend directo | http://localhost:4000 |
-| Salud y métricas del backend (operacionales; no son API pública) | http://localhost:4000/health/live, /health/ready, /metrics |
+| Salud y métricas (operacionales; no son API pública) | http://localhost:4000/health/live, /health/ready, /metrics |
 
-- El frontend reenvía `/api/*` al backend; cambia el destino con `API_INTERNAL_URL` en `frontend/.env.local` (ver `frontend/.env.example`). La descarga del paquete de portabilidad tiene su propia ruta del mismo origen, que lee la misma variable.
-- El backend corre con el soporte nativo de TypeScript de Node 24 y se reinicia al guardar. Respeta las restricciones de ADR 0016: sin `enum`, `namespace` con contenido, propiedades de parámetro ni alias de `paths`, e imports relativos con extensión `.ts`.
+### Notas para desarrollo
 
-El primer arranque del backend crea la empresa y el administrador inicial con
-`INITIAL_USER_EMAIL` e `INITIAL_USER_PASSWORD` de `backend/.env`; con ellos se inicia sesión.
-Recuperación de emergencia de un administrador: `docs/architecture/deployment.md`.
+- `POSTGRES_PORT` cambia el puerto local de PostgreSQL (por defecto 5432); ajusta entonces las
+  URLs de `backend/.env`. `db:status` informa el estado de las migraciones.
+- Para crear una migración a partir de `backend/prisma/schema.prisma`:
+  `corepack pnpm --filter @facturador/backend db:migrate:dev --name <nombre>`.
+- El cliente de Prisma se genera en `backend/src/generated/prisma/` (no versionado) al instalar y
+  con `db:generate`. Para regenerar los modelos de Better Auth tras cambiar sus plugins o su
+  versión: `corepack pnpm --filter @facturador/backend db:auth-schema`
+  (ver `docs/architecture/database.md`).
+- La interfaz reenvía `/api/*` al backend; cambia el destino con `API_INTERNAL_URL` en
+  `frontend/.env.local` (ver `frontend/.env.example`). La descarga del paquete de portabilidad
+  tiene su propia ruta del mismo origen, que lee la misma variable.
+- El backend corre con el soporte nativo de TypeScript de Node 24 y se reinicia al guardar. Sigue
+  las restricciones de ADR 0016: sin `enum`, `namespace` con contenido, propiedades de parámetro ni
+  alias de `paths`, e imports relativos con extensión `.ts`.
+- **Versiones:** las dependencias van en versión exacta y el lockfile se versiona. Prisma
+  permanece en la major 7: ejecuta sus binarios solo desde el repositorio
+  (`corepack pnpm exec prisma …` o los scripts `db:*`), nunca con `npx prisma` ni
+  `pnpm dlx prisma` sin versión, que descargarían la última publicada.
+- **Comandos destructivos de Prisma** (`prisma migrate reset`, `prisma db push --accept-data-loss`
+  y equivalentes) borran datos. Ningún script del proyecto los usa; solo una persona los ejecuta,
+  de forma explícita, y un agente nunca lo hace sin el consentimiento expreso del usuario.
+- Recuperación de emergencia de un administrador: `docs/architecture/deployment.md`.
 
-## Despliegue de producción
+## Despliegue en producción
 
 La topología de referencia es `deploy/compose.yaml`: nginx como único servicio público (TLS en
 443 y redirección en 80), y la interfaz, la API y PostgreSQL 17 en una red interna sin salida a
@@ -149,26 +174,51 @@ su opción `--replace-existing` es destructiva.
 corepack pnpm verify
 ```
 
+Encadena formato, versiones fijadas, generación del cliente de Prisma, lint, typecheck, pruebas
+(las de integración exigen PostgreSQL en marcha), OpenAPI, el arranque del backend en modo
+desarrollo, el build, la política de seguridad del navegador y los artefactos del SRI. Si
+PostgreSQL no está disponible, las pruebas de integración fallan con la indicación de levantarlo.
+
 Los ensayos del despliegue (`corepack pnpm deployment:context`, `deployment:topology` y
 `deployment:recovery`) necesitan Docker y corren aparte, también en el workflow `deployment` de la
-CI (`docs/quality/testing.md`).
+CI ([`docs/quality/testing.md`](docs/quality/testing.md)).
 
-Encadena formato, versiones fijadas, generación del cliente de Prisma, lint, typecheck,
-pruebas (las de integración exigen PostgreSQL en marcha), OpenAPI, el arranque del backend en
-modo desarrollo y el build. Si PostgreSQL no está disponible, las pruebas de integración
-fallan con la indicación de levantarlo.
+## Documentación
 
-## Reglas sobre versiones
+| Tema | Dónde |
+| --- | --- |
+| Producto, alcance y vocabulario | [`docs/product/`](docs/product/) |
+| Arquitectura | [`ARCHITECTURE.md`](ARCHITECTURE.md) y [`docs/architecture/`](docs/architecture/) |
+| Decisiones de arquitectura (ADR) | [`docs/architecture/adr/`](docs/architecture/adr/) |
+| Despliegue, respaldo y recuperación | [`docs/architecture/deployment.md`](docs/architecture/deployment.md) |
+| Seguridad y control de acceso | [`docs/security/`](docs/security/) |
+| Calidad, pruebas y certificación con el SRI | [`docs/quality/`](docs/quality/) |
+| Comportamiento vigente (especificaciones) | [`openspec/specs/`](openspec/specs/) |
 
-- Las dependencias se instalan con versión exacta y el lockfile se versiona.
-- Prisma permanece en la major 7. Ejecuta sus binarios solo desde el repositorio:
-  `corepack pnpm exec prisma …` o los scripts `db:*`. Nunca uses `npx prisma` ni
-  `pnpm dlx prisma` sin versión: descargarían la última publicada, que puede ser Prisma 8.
+## Créditos
+
+La integración con el SRI se apoya en dos librerías open source:
+
+- **[facturacion-electronica-ec](https://github.com/cuymo/facturacion-electronica-ec)** (MIT,
+  versión 1.0.1): librería TypeScript para la emisión de comprobantes electrónicos del SRI
+  Ecuador. EmiteYa la usa como base del motor SRI para construir el XML de los seis
+  comprobantes, generar la clave de acceso y validar los datos, detrás de puertos propios
+  ([ADR 0018](docs/architecture/adr/0018-motor-sri-facturacion-electronica-ec.md)).
+- **[ec-sri-invoice-signer](https://github.com/bryancalisto/ec-sri-invoice-signer)** (MIT,
+  versión 1.8.2), de Bryan Calisto: la firma XAdES-BES de los comprobantes.
+
+También se apoya en Next.js, React, Express, Prisma, PostgreSQL, Better Auth, pdfmake (el RIDE),
+xmllint-wasm (la validación XSD) y driver.js (el recorrido de bienvenida), entre otras. Las
+versiones están en [`docs/architecture/stack.md`](docs/architecture/stack.md), y los avisos de
+los recursos de terceros de la interfaz, en
+[`frontend/THIRD_PARTY_NOTICES.md`](frontend/THIRD_PARTY_NOTICES.md).
 
 ## Contribuir y seguridad
 
-- Cómo contribuir: `CONTRIBUTING.md`. Conducta: `CODE_OF_CONDUCT.md`.
-- Vulnerabilidades: repórtalas en privado como indica `SECURITY.md`, nunca en un issue público.
+- Cómo contribuir: [`CONTRIBUTING.md`](CONTRIBUTING.md). Conducta:
+  [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md).
+- Vulnerabilidades: repórtalas en privado como indica [`SECURITY.md`](SECURITY.md), nunca en un
+  issue público.
 
 ## Licencia
 
