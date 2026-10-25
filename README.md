@@ -1,4 +1,4 @@
-# EmiteYa
+# EmiteYa 🇪🇨
 
 **Facturador electrónico open source y self-hosted para Ecuador.** Emite, conserva, envía por
 correo y exporta los seis comprobantes electrónicos del SRI en el esquema off-line, desde tu propio
