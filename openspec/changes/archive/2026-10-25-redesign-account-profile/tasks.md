@@ -39,4 +39,4 @@
 
 ## 8. Verificación
 
-- [ ] 8.1 Ejecutar `corepack pnpm verify` y confirmar que pasa completo, incluidas las pruebas de integración del backend, `openapi:check` y la política de seguridad del navegador.
+- [x] 8.1 Ejecutar `corepack pnpm verify` y confirmar que pasa completo, incluidas las pruebas de integración del backend, `openapi:check` y la política de seguridad del navegador.
