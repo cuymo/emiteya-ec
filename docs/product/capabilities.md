@@ -290,7 +290,7 @@ distinguen el requisito del ERS, la política del MVP y la defensa de recursos.
 
 | Regla | Origen | Fuente |
 | --- | --- | --- |
-| Exactamente cinco reportes: Documentos emitidos, Facturas, Retenciones, Inventario y Terceros, con sus filtros mínimos y sus columnas orientativas | Requisito del ERS | ERS §11 |
+| Exactamente cinco reportes: Documentos emitidos, Facturas, Retenciones, Inventario y Clientes y proveedores (antes «Terceros»), con sus filtros mínimos y sus columnas orientativas | Requisito del ERS | ERS §11 |
 | Exportación solo a XLSX; sin CSV, PDF, JSON exportado ni ZIP | Requisito del ERS (XLSX) y política del MVP (nada más) | ERS RF-501 |
 | Identificaciones, claves, autorizaciones y números formateados como texto | Requisito del ERS | ERS RF-502 |
 | Importes como números con formato monetario, y como texto canónico cuando superan la precisión segura de la hoja (unos 15 dígitos significativos): nunca un decimal exacto convertido a binario aproximado | Requisito del ERS y política del proyecto (exactitud antes que conveniencia) | ERS RF-503; política decimal |

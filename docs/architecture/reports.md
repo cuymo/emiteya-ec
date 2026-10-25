@@ -37,7 +37,7 @@ su design (`openspec/changes/archive/2026-10-08-add-reports-export/`), en el ADR
 | `GET /api/v1/reports/withholdings` | Retenciones, una fila por línea | `reports.read` |
 | `GET /api/v1/reports/inventory-balances` | Existencias | `reports.read` |
 | `GET /api/v1/reports/inventory-movements` | Movimientos | `reports.read` |
-| `GET /api/v1/reports/parties` | Terceros | `reports.read` |
+| `GET /api/v1/reports/parties` | Clientes y proveedores | `reports.read` |
 | `GET /api/v1/reports/{reporte}/export` | El XLSX del mismo reporte con los mismos filtros, sin página | `reports.export` |
 
 - **Respuesta de la lista:** `{ data, meta: { page, pageSize, total, environment } }`. `environment` es el ambiente efectivo, o `null` en el inventario y los terceros.
@@ -96,7 +96,9 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
 | Retenciones | Fecha, Número, Identificación, Sujeto retenido, Período fiscal, Impuesto, Código, Base, Porcentaje, Valor retenido, Estado, Ambiente |
 | Existencias | Código, Producto, Saldo |
 | Movimientos | Fecha y hora, Código, Producto, Tipo, Cantidad, Saldo resultante, Comprobante |
-| Terceros | Identificación, Razón social, Correo (los correos del tercero en su orden, separados por comas), Teléfono, Roles, Estado |
+| Clientes y proveedores | Identificación, Razón social, Correo (los correos del tercero en su orden, separados por comas), Teléfono, Roles, Estado |
+
+El reporte de terceros se llama «Clientes y proveedores» desde `rename-parties-report` (2026-10-25), igual que su pantalla; su dirección (`/reports/parties`) y su identificador no cambiaron. La hoja «Terceros» del paquete de portabilidad conserva su nombre, porque es parte del formato versionado `PORTABILITY_FORMAT_V1`.
 
 **Importes por tipo:**
 
@@ -147,7 +149,7 @@ En este orden, sin job, artefacto durable, TTL ni URL firmada:
   - El producto se elige con un buscador, nunca escribiendo un identificador.
   - Las identificaciones se aplican 300 ms después de dejar de escribir.
   - Un rango invertido se explica en el campo y no se consulta.
-- **Valores por defecto:** el estado "Todos" en Documentos emitidos, "Autorizado" en Facturas y Retenciones, y "Activos" en Terceros. Sin elegirlo, el estado no viaja y lo aplica el servidor.
+- **Valores por defecto:** el estado "Todos" en Documentos emitidos, "Autorizado" en Facturas y Retenciones, y "Activos" en Clientes y proveedores. Sin elegirlo, el estado no viaja y lo aplica el servidor.
 - **Encabezado de la tabla:** el número de registros y, en los reportes de comprobantes, el ambiente efectivo que devuelve la lista. El aviso de RF-505 va bajo los controles.
 - **Tabla:** paginada (`AppDataTable`), con tarjetas por debajo de 768 px.
   - Los importes van con `USD` y dos decimales, sin pasar por `number`.

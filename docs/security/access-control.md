@@ -196,7 +196,7 @@ denegado por defecto;
 | `purchaseSettlements.emit` | Emitir una liquidación de compra desde un borrador, confirmando las cuatro declaraciones de procedencia: reserva el número y la firma localmente | Sí | Sí |
 | `purchaseSettlements.retrySigning` | Reintentar la firma de una liquidación reservada, con el mismo número y la misma clave | Sí | Sí |
 | `purchaseSettlements.reconcile` | Pedir la reconciliación de una liquidación de compra con el SRI, con motivo, como la de una factura | Sí | No |
-| `reports.read` | Consultar los cinco reportes (Documentos emitidos, Facturas, Retenciones, Inventario y Terceros) con sus filtros, por páginas | Sí | Sí |
+| `reports.read` | Consultar los cinco reportes (Documentos emitidos, Facturas, Retenciones, Inventario y Clientes y proveedores) con sus filtros, por páginas | Sí | Sí |
 | `reports.export` | Exportar un reporte a XLSX con los mismos filtros de su lista; cada exportación generada queda auditada (`report.exported`) | Sí | Sí |
 | `dataPortability.export` | Solicitar, listar, consultar y descargar las exportaciones de portabilidad de los datos y artefactos de la empresa; la solicitud, la generación y el inicio de cada descarga quedan auditados (`data_export.*`) | Sí | No |
 

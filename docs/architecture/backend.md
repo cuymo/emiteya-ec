@@ -285,7 +285,7 @@ leer tablas: cada módulo dueño exporta la fuente de su reporte y `main.ts` la 
   | Retenciones | `withholding-receipts` (`createWithholdingsReportSource`) | `withholding_receipt_line`, `withholding_receipt` y el comprobante, con la denominación del impuesto de su snapshot | El del comprobante, el sustento y la línea |
   | Existencias | `inventory` (`inventoryBalanceReads`) y `products` (`createReportProductsSource`) | Los productos con `stock_balance` y su saldo registrado, ordenados por `products` | Nombre normalizado e identificador |
   | Movimientos | `inventory` (`createInventoryMovementsReportSource`) y `products` (`reportProductLabels`) | `stock_movement` de toda la empresa, con el código y el nombre vigentes del producto | Momento e identificador, descendentes |
-  | Terceros | `parties` (`createPartiesReportSource`) | `party`, con los datos vigentes | Razón social normalizada e identificador |
+  | Clientes y proveedores | `parties` (`createPartiesReportSource`) | `party`, con los datos vigentes | Razón social normalizada e identificador |
 
 - **Importes.** Cada módulo de comprobante declara la proyección de su snapshot (`fiscal/infrastructure/reports/amount-projections.ts`): el subtotal y la suma de los impuestos en SQL con `NUMERIC`. La fuente las compone en un `CASE` por tipo y exige una por cada uno de los seis tipos. La retención solo tiene su total retenido y la guía ninguno: nunca un 0.00 inventado.
 - **Ambiente.** `taxpayer` exporta `currentEnvironment`, el de la configuración vigente de la empresa, leído en cada solicitud.
