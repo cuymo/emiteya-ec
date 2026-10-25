@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Primeros pasos fuera de Inicio
-Mientras la empresa no pueda emitir, la barra lateral SHALL mostrar «Primeros pasos» debajo de Inicio, sin número ni insignia, que lleva a su página. La barra superior no SHALL llevar un botón para esto. Esa página SHALL listar los requisitos para emitir, cumplidos y pendientes, con el enlace a resolver cada uno cuando el rol puede hacerlo, o pedir a un administrador que lo complete. Con la empresa lista para emitir, la opción no SHALL mostrarse, y la página SHALL decir que la empresa ya puede emitir.
+Mientras la empresa no pueda emitir, la barra lateral SHALL mostrar «Primeros pasos» debajo de Inicio, sin número ni insignia. Su página SHALL listar los requisitos para emitir, cumplidos y pendientes, con el enlace a resolver cada uno cuando el rol puede hacerlo. Con la empresa lista, la opción no SHALL mostrarse.
 
 #### Scenario: Empresa sin firma
 - **WHEN** un administrador entra con la empresa sin firma electrónica
