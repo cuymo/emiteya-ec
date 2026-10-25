@@ -153,6 +153,7 @@ describe("generación de OpenAPI", () => {
       "/me",
       "/me/avatar",
       "/me/default-emission-point",
+      "/me/name",
       "/me/profile",
       "/parties",
       "/parties/{partyId}",

@@ -65,6 +65,8 @@ function renderAccount(
 
 beforeEach(() => {
   navigation.pathname = "/mi-cuenta";
+  // El punto predeterminado vive en su pestaña de Mi cuenta (redesign-account-profile, design D8).
+  navigation.search = new URLSearchParams("pestana=establecimiento");
 });
 
 afterEach(() => {
