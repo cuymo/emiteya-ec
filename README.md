@@ -4,6 +4,10 @@ Facturador electrónico open source y self-hosted para contribuyentes ecuatorian
 contribuyente y emite, conserva, envía por correo y exporta los seis comprobantes electrónicos del
 SRI en el esquema off-line. No es un ERP, un POS ni un sistema contable.
 
+![Inicio de EmiteYa: indicadores del mes, ventas de seis meses, comprobantes por tipo, mejores clientes y productos, estado de facturación electrónica y últimos comprobantes](docs/assets/emiteya-inicio.png)
+
+<sub>Captura con datos de demostración de una empresa ficticia.</sub>
+
 **Estado:** la aplicación está completa para su primera versión pública (`CHANGELOG.md`). Quedó
 certificada en el ambiente de Pruebas del SRI el 2026-10-11, con los siete comprobantes de la
 matriz autorizados (`docs/quality/sri-certification.md`). La transmisión al SRI viene apagada
