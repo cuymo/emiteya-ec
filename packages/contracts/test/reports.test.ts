@@ -32,7 +32,7 @@ describe("reportes", () => {
       "Retenciones",
       "Existencias",
       "Movimientos",
-      "Terceros",
+      "Clientes y proveedores",
     ]);
     expect(REPORT_ERROR_CODES).toEqual(["REPORT_EXPORT_ROW_LIMIT", "REPORT_EXPORT_BUSY"]);
   });

@@ -35,7 +35,7 @@ export const REPORT_LABELS: Record<ReportId, string> = {
   withholdings: "Retenciones",
   "inventory-balances": "Existencias",
   "inventory-movements": "Movimientos",
-  parties: "Terceros",
+  parties: "Clientes y proveedores",
 };
 
 /** Aviso de ERS RF-505, en la pantalla y en la hoja "Filtros" del XLSX. */

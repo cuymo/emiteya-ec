@@ -80520,7 +80520,7 @@
     },
     "/reports/parties": {
       "get": {
-        "summary": "Listar el reporte Terceros con sus filtros, por páginas y en su orden total",
+        "summary": "Listar el reporte Clientes y proveedores con sus filtros, por páginas y en su orden total",
         "parameters": [
           {
             "name": "role",
@@ -80829,7 +80829,7 @@
     },
     "/reports/parties/export": {
       "get": {
-        "summary": "Exportar a XLSX el reporte Terceros: exactamente las filas de su lista completa con los mismos filtros, en el mismo orden",
+        "summary": "Exportar a XLSX el reporte Clientes y proveedores: exactamente las filas de su lista completa con los mismos filtros, en el mismo orden",
         "parameters": [
           {
             "name": "role",

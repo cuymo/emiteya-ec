@@ -54,7 +54,7 @@ const REPORT_OPTIONS = [
   { value: "facturas", label: "Facturas" },
   { value: "retenciones", label: "Retenciones" },
   { value: "inventario", label: "Inventario" },
-  { value: "terceros", label: "Terceros" },
+  { value: "terceros", label: REPORT_LABELS.parties },
 ] as const;
 type ReportParam = (typeof REPORT_OPTIONS)[number]["value"];
 const INVENTORY_VIEWS = [

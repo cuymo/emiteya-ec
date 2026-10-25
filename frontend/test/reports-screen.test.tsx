@@ -205,7 +205,7 @@ describe("Reportes", () => {
       "Facturas",
       "Retenciones",
       "Inventario",
-      "Terceros",
+      "Clientes y proveedores",
     ]);
     await user.keyboard("{Escape}");
     expect(screen.getByRole("combobox", { name: "Vista" }).textContent).toContain("Existencias");
