@@ -1,15 +1,17 @@
 # Registro de cambios
 
 Todos los cambios notables de EmiteYa se anotan aquí. El formato sigue
-[Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usará
-[versionado semántico](https://semver.org/lang/es/) desde su primera versión publicada.
+[Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto sigue el
+[versionado semántico](https://semver.org/lang/es/).
 
 El detalle de cada cambio, con su diseño y su especificación, está en
 `openspec/changes/archive/`.
 
 ## [Sin publicar]
 
-Primera versión pública (v1.0), bajo la licencia AGPL-3.0.
+## [1.0.0] - 2026-10-25
+
+Primera versión pública, bajo la licencia AGPL-3.0.
 
 ### Comprobantes electrónicos (esquema off-line del SRI)
 
@@ -37,6 +39,7 @@ Primera versión pública (v1.0), bajo la licencia AGPL-3.0.
 - Reportes filtrables exportables a XLSX y portabilidad completa de los datos.
 - Usuarios con roles Administrador y Operador, auditoría de cambios críticos, perfil con foto,
   recuperación de la contraseña por correo y un recorrido de bienvenida.
+- Página 404 propia, dentro del shell cuando hay sesión.
 
 ### Seguridad y despliegue
 
@@ -45,3 +48,6 @@ Primera versión pública (v1.0), bajo la licencia AGPL-3.0.
 - Despliegue de producción de referencia con Docker Compose (nginx con TLS, red privada y
   respaldos de PostgreSQL).
 - Escaneo de secretos y de dependencias en la verificación.
+
+[Sin publicar]: https://github.com/cuymo/emiteya-ec/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/cuymo/emiteya-ec/releases/tag/v1.0.0

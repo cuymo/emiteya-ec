@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url";
 import { apiRoutes, buildOpenApiDocument } from "@facturador/contracts";
 
 const target = fileURLToPath(new URL("../../../docs/generated/openapi.json", import.meta.url));
+// La versión del documento es la del paquete de contratos, que sigue la del producto.
+const { version } = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as {
+  version: string;
+};
 // Regla de origen de la API (enforce-api-origin-and-body-limits), sin el origen configurado.
 const description = [
   "API de la aplicación, autenticada con la cookie de sesión y sin CORS.",
@@ -12,8 +18,8 @@ const description = [
   "Los dos rechazos responden 403 REQUEST_ORIGIN_REJECTED antes de leer el cuerpo y de autenticar.",
 ].join(" ");
 const document = buildOpenApiDocument(apiRoutes, {
-  title: "Facturador SRI API",
-  version: "0.0.0",
+  title: "EmiteYa API",
+  version,
   description,
 });
 const content = JSON.stringify(document, null, 2) + "\n";
