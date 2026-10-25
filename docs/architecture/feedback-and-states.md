@@ -121,7 +121,7 @@ JSON or internal identifiers.
 | --- | --- | --- |
 | Loading | `app/(app)/loading.tsx` → `RouteLoading` | Skeleton of the page header and content, announced as «Cargando la pantalla». The shell stays visible and usable. |
 | Unexpected error | `app/(app)/error.tsx` → `RouteError` | «No pudimos mostrar esta pantalla» with «Intentar de nuevo» (`retry()` of Next 16). `error.message` and `digest` are never shown. The shell stays, so the user can go elsewhere. |
-| Unknown address | `app/not-found.tsx` → `RouteNotFound` | «Esta página no existe», with the brand and a link to Inicio. It is outside the shell and asks for no company data. |
+| Unknown address | `app/not-found.tsx` → `NotFoundScreen` → `RouteNotFound` | The logo in the center, «Oops…», «No encontramos la página que buscas» with its explanation, and «Volver a Inicio» (`add-shell-not-found-page`). With a session it renders inside the shell, with the sidebar and the topbar; without one, alone on the soft blue gradient, asking for no company data and without sending to the sign-in page. The response status stays 404. |
 | Forbidden destination | `components/shell/route-guard.tsx` → `RouteForbidden` | When the role lacks the destination's permission in the route model, the shell shows «No tienes acceso a esta sección» with a link to Inicio. The decision is synchronous, so the protected screen never mounts and never requests its data. The screen keeps its own check, and the API remains the authority. |
 
 - **No catch-all route.** There is no `[...not-found]` page: `next.config.ts` rewrites

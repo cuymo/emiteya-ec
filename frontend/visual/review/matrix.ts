@@ -402,6 +402,24 @@ export const STATES: State[] = [
       ).toBeVisible();
     },
   },
+  // La 404 (add-shell-not-found-page): dentro del shell con sesión y sola sin ella.
+  {
+    route: "no-encontrada",
+    state: "con-sesion",
+    path: "/esta-pagina-no-existe",
+    group: "shell",
+    widths: ["1440", "390"],
+    ready: (page) => heading(page, "Oops…"),
+  },
+  {
+    route: "no-encontrada",
+    state: "sin-sesion",
+    path: "/esta-pagina-no-existe",
+    group: "shell",
+    widths: ["1440"],
+    scenario: { persona: "anonymous" },
+    ready: (page) => heading(page, "Oops…"),
+  },
   // Barra superior en cada ambiente, sobre Facturas.
   {
     route: "facturas",
