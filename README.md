@@ -1,15 +1,19 @@
-# Facturador SRI open source
+# EmiteYa
 
-Facturador electrónico self-hosted para contribuyentes ecuatorianos: configura un
-contribuyente y emite, conserva y exporta los seis comprobantes electrónicos del SRI en el
-esquema off-line. No es un ERP, un POS ni un sistema contable.
+Facturador electrónico open source y self-hosted para contribuyentes ecuatorianos: configura un
+contribuyente y emite, conserva, envía por correo y exporta los seis comprobantes electrónicos del
+SRI en el esquema off-line. No es un ERP, un POS ni un sistema contable.
 
-Estado: la secuencia del MVP (cambios 0 a 16) está implementada: configuración del contribuyente,
-numeración, firma, catálogos, terceros y productos, los seis comprobantes off-line, transmisión al
-SRI (deshabilitada por defecto), archivo, inventario, reportes y portabilidad de datos. Todavía no
-está certificada con el SRI ni lista para producción: las compuertas pendientes están en
-`ESTADO-DEL-PROYECTO.md`. El contexto del producto está en `docs/product/` y la arquitectura en
-`ARCHITECTURE.md` y `docs/architecture/`.
+**Estado:** la aplicación está completa para su primera versión pública (`CHANGELOG.md`). Quedó
+certificada en el ambiente de Pruebas del SRI el 2026-10-11, con los siete comprobantes de la
+matriz autorizados (`docs/quality/sri-certification.md`). La transmisión al SRI viene apagada
+(`SRI_TRANSMISSION_ENABLED=0`): habilitar el ambiente de Producción es una decisión de cada
+instalación, con su propia firma electrónica y la lista de la sección «Fuera de este runbook:
+go-live» de ese documento. El alcance de v1 es el uso propio o el suministro no comercial
+(`docs/product/overview.md`).
+
+El contexto del producto está en `docs/product/` y la arquitectura en `ARCHITECTURE.md` y
+`docs/architecture/`.
 
 ## Requisitos
 
@@ -156,3 +160,16 @@ fallan con la indicación de levantarlo.
 - Prisma permanece en la major 7. Ejecuta sus binarios solo desde el repositorio:
   `corepack pnpm exec prisma …` o los scripts `db:*`. Nunca uses `npx prisma` ni
   `pnpm dlx prisma` sin versión: descargarían la última publicada, que puede ser Prisma 8.
+
+## Contribuir y seguridad
+
+- Cómo contribuir: `CONTRIBUTING.md`. Conducta: `CODE_OF_CONDUCT.md`.
+- Vulnerabilidades: repórtalas en privado como indica `SECURITY.md`, nunca en un issue público.
+
+## Licencia
+
+EmiteYa se publica bajo la [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`).
+Puedes usarlo, estudiarlo, modificarlo y compartirlo. Si lo ofreces a otras personas como servicio
+en red con cambios, debes publicar el código de esos cambios bajo la misma licencia.
+
+Copyright (C) 2026 los colaboradores de EmiteYa.

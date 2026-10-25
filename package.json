@@ -2,6 +2,7 @@
   "name": "facturadorsri-opensource",
   "version": "0.0.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "description": "Facturador electrónico open source y self-hosted para los comprobantes del SRI de Ecuador.",
   "type": "module",
   "packageManager": "pnpm@12.4.2",

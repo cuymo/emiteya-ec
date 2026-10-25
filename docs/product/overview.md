@@ -107,7 +107,7 @@ Post-MVP, sin construir todavía:
 - El go-live de v1 soporta solo el uso propio o el suministro no comercial de EmiteYa: en ese alcance el RUC del proveedor del sistema (Anexo 26) no aplica. Un despliegue en el que EmiteYa se vende, se licencia o se presta como sistema o servicio de pago necesita una clasificación nueva frente a la NAC-DGERCGC26-00000027 y hoy no está soportado: el producto no escribe ese campo (CTX §37, Q-37).
 - Self-hosted en Linux mediante contenedores, configurado por variables de entorno, sin dependencias exclusivas de un proveedor cloud (RNF-001, RNF-008).
 - Interfaz en español, moneda USD y fechas en la zona horaria de Ecuador (RNF-010).
-- Proyecto open source: licencia, `CONTRIBUTING.md`, `SECURITY.md` y `CHANGELOG` son obligatorios para v1.0 (API-006, ERS §20). La licencia aún no está elegida (Q-33).
+- Proyecto open source bajo AGPL-3.0 (`LICENSE`, Q-33 resuelta el 2026-10-25), con `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` y `CHANGELOG.md`, obligatorios para v1.0 (API-006, ERS §20).
 - Stack de CognitiveStack (`../architecture/stack.md`); las desviaciones requieren un ADR.
 
 ## Estado

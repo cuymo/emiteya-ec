@@ -2,6 +2,7 @@
   "name": "@facturador/backend",
   "version": "0.0.0",
   "private": true,
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env --conditions=development src/main.ts",
