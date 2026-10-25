@@ -36,7 +36,7 @@ El sistema SHALL listar en una bandeja los comprobantes fiscales de la empresa d
 - **THEN** la bandeja la muestra con su proveedor, rotulado "Proveedor" y nunca "Comprador", y con su importe total
 
 ### Requirement: Filtros de la bandeja
-La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, estado, identificación del receptor, número, establecimiento, punto de emisión y estado del último envío por correo, combinables entre sí. La identificación del receptor encuentra una guía de remisión por cualquiera de sus destinatarios. Un filtro con un valor inválido SHALL rechazarse sin consultar.
+La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, estado, identificación del receptor, número, establecimiento, punto de emisión y estado del último envío por correo, combinables entre sí. La identificación del receptor encuentra una guía de remisión por cualquiera de sus destinatarios. La búsqueda por texto SHALL encontrar un comprobante por su número, por el nombre de su receptor o por su identificación, incluidos el nombre y la identificación de cualquier destinatario de una guía de remisión. Un filtro con un valor inválido SHALL rechazarse sin consultar.
 
 #### Scenario: Rango de fechas
 - **WHEN** un usuario filtra del 1 al 15 de octubre de 2026
@@ -61,6 +61,10 @@ La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, e
 #### Scenario: Correo no enviado
 - **WHEN** un usuario filtra por el correo fallido
 - **THEN** la bandeja contiene solo los comprobantes autorizados cuyo último envío por correo falló
+
+#### Scenario: Búsqueda por identificación
+- **WHEN** un usuario escribe en la búsqueda la identificación de un comprador, o la del tercer destinatario de una guía
+- **THEN** la bandeja contiene los comprobantes de ese receptor, o esa guía
 
 ### Requirement: Documentos disponibles de un comprobante
 Para cada comprobante, el sistema SHALL indicar qué documentos están disponibles y el estado de la generación de su RIDE, en la bandeja y en su detalle. El RIDE solo está disponible si el comprobante está autorizado y su RIDE existe; el XML autorizado, solo si el SRI lo devolvió; el XML firmado, desde que el comprobante está firmado. Las acciones ofrecidas dependen de esa disponibilidad.
