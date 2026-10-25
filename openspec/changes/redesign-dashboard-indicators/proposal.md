@@ -29,7 +29,7 @@ inventario, que ya tienen su lugar en la barra superior y en Inventario.
 
 - **Primeros pasos fuera de Inicio** (decisión del propietario, 2026-10-24): los requisitos para
   emitir salen del tablero y van a su propia página, «Primeros pasos»; mientras falte alguno, la
-  barra lateral la muestra debajo de Inicio con el número de pendientes.
+  barra lateral la muestra debajo de Inicio.
 
 ## Capabilities
 

@@ -1,6 +1,6 @@
 // «Primeros pasos» en la barra lateral y su página (redesign-dashboard-indicators, tarea 4.1, con la
-// decisión del propietario del 2026-10-24): la opción debajo de Inicio, con el número de pendientes,
-// solo mientras la empresa no pueda emitir; y la página con los requisitos y el enlace a resolverlos
+// decisión del propietario del 2026-10-24): la opción debajo de Inicio, sin número ni insignia, solo
+// mientras la empresa no pueda emitir; y la página con los requisitos y el enlace a resolverlos
 // según el rol. La barra superior no lleva ningún botón.
 import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -38,13 +38,14 @@ afterEach(() => {
 describe("Primeros pasos en la barra lateral", () => {
   const nav = () => screen.getByRole("navigation", { name: "Navegación principal" });
 
-  it("con requisitos pendientes aparece debajo de Inicio, con cuántos faltan", async () => {
+  it("con requisitos pendientes aparece debajo de Inicio, sin número", async () => {
     api({ routes: { "GET /api/v1/company/status": () => status(["SIGNING_CERTIFICATE"]) } });
     renderShell();
     const link = await within(
       await screen.findByRole("navigation", { name: "Navegación principal" }),
-    ).findByRole("link", { name: "Primeros pasos, 1 pendiente" });
+    ).findByRole("link", { name: "Primeros pasos" });
     expect(link.getAttribute("href")).toBe("/primeros-pasos");
+    expect(link.textContent).toBe("Primeros pasos");
     const labels = within(nav())
       .getAllByRole("link")
       .map((item) => item.getAttribute("href"));
@@ -65,7 +66,7 @@ describe("Primeros pasos en la barra lateral", () => {
     api({ routes: { "GET /api/v1/company/status": () => status(["SIGNING_CERTIFICATE"]) } });
     renderShell();
     const sidebar = await screen.findByRole("navigation", { name: "Navegación principal" });
-    const link = await within(sidebar).findByRole("link", { name: "Primeros pasos, 1 pendiente" });
+    const link = await within(sidebar).findByRole("link", { name: "Primeros pasos" });
     expect(link.getAttribute("aria-current")).toBe("page");
   });
 });

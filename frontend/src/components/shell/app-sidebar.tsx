@@ -5,7 +5,7 @@
 // de la sesión; sin tarjeta de soporte, Inbox, insignias ni navegación de demostración. En móvil, los
 // grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. Inicio y Reportes
 // van sueltos, sin título, y una línea separa los bloques (reorganize-main-navigation). Debajo de
-// Inicio, «Primeros pasos» con sus pendientes, solo mientras la empresa no pueda emitir. La sección
+// Inicio, «Primeros pasos», solo mientras la empresa no pueda emitir. La sección
 // Configuración es un solo enlace después de Reportes, a su primera pestaña que el rol ve: sus
 // secciones son pestañas de una página (decisión del propietario, 2026-10-16). El destino actual se
 // desplaza a la vista de la barra en la carga y en cada cambio de ruta (design D23).
@@ -89,40 +89,13 @@ function GroupMenu({
 
 /**
  * «Primeros pasos» debajo de Inicio (redesign-dashboard-indicators, decisión del propietario del
- * 2026-10-24): solo mientras la empresa no pueda emitir, con el número de requisitos pendientes.
- * Con la empresa lista, o mientras se consulta, no aparece.
+ * 2026-10-24): solo mientras la empresa no pueda emitir, sin número ni insignia. Con la empresa lista,
+ * o mientras se consulta, no aparece.
  */
 function SetupNavItem({ active }: { active: boolean }) {
-  const { isMobile, setOpenMobile } = useSidebar();
   const readiness = useCompanyStatus().data?.readiness;
   if (!readiness || readiness.ready) return null;
-  const pending = readiness.checks.filter((check) => check.status === "PENDING").length;
-  const Icon = PRIMEROS_PASOS.icon;
-  const count = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={active} tooltip={`${PRIMEROS_PASOS.label} · ${count}`}>
-        <Link
-          href={PRIMEROS_PASOS.href}
-          aria-current={active ? "page" : undefined}
-          data-tour="primeros-pasos"
-          onClick={() => {
-            if (isMobile) setOpenMobile(false);
-          }}
-        >
-          <Icon aria-hidden="true" />
-          <span>{PRIMEROS_PASOS.label}</span>
-          <span className="sr-only">, {count}</span>
-          <span
-            aria-hidden="true"
-            className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs leading-none font-semibold text-warning-foreground tabular-nums group-data-[collapsible=icon]:hidden"
-          >
-            {pending}
-          </span>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
+  return <DestinationLink destination={PRIMEROS_PASOS} active={active} />;
 }
 
 function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string | undefined }) {
