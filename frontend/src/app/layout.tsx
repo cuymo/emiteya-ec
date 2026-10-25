@@ -11,6 +11,15 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "EmiteYa",
   description: "Facturador electrónico open source para los comprobantes del SRI.",
+  // Los iconos viven en `public/` y no como archivos de `app/`: Next prerenderaría esas rutas, y la
+  // política exige que ningún documento sea estático (enforce-frontend-security-headers-csp, D2).
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "256x256" },
+    ],
+    apple: { url: "/apple-icon.png", sizes: "180x180" },
+  },
 };
 
 // Leer el nonce de `proxy.ts` hace dinámico todo el árbol: cada documento se renderiza por petición
