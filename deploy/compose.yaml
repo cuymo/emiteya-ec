@@ -37,7 +37,7 @@ services:
 
   # Un solo uso: aplica las migraciones y termina. El backend solo arranca si termina con 0.
   migrate:
-    image: emiteya-migrate:${EMITEYA_IMAGE_TAG:-local}
+    image: ${EMITEYA_IMAGE_PREFIX:-}emiteya-migrate:${EMITEYA_IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: deploy/backend.Dockerfile
@@ -54,7 +54,7 @@ services:
 
   backend:
     <<: *app-hardening
-    image: emiteya-backend:${EMITEYA_IMAGE_TAG:-local}
+    image: ${EMITEYA_IMAGE_PREFIX:-}emiteya-backend:${EMITEYA_IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: deploy/backend.Dockerfile
@@ -98,7 +98,7 @@ services:
 
   frontend:
     <<: *app-hardening
-    image: emiteya-frontend:${EMITEYA_IMAGE_TAG:-local}
+    image: ${EMITEYA_IMAGE_PREFIX:-}emiteya-frontend:${EMITEYA_IMAGE_TAG:-local}
     build:
       context: ..
       dockerfile: deploy/frontend.Dockerfile

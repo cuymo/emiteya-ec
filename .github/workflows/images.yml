@@ -1,0 +1,108 @@
+# Imágenes públicas de EmiteYa (publish-container-images). Al publicar una etiqueta de versión
+# `vX.Y.Z`, o a mano para una etiqueta ya publicada, construye las tres imágenes de producción del
+# despliegue de referencia y las sube a GitHub Container Registry con etiquetas semánticas, etiquetas
+# OCI, procedencia y SBOM. Solo linux/amd64 (decisión del propietario, 2026-10-25: un VPS típico con
+# Debian). La interfaz se compila con la dirección interna del backend de la topología de referencia.
+# Sin secretos propios: solo GITHUB_TOKEN con permiso de escritura de paquetes. Ningún paso contacta
+# el SRI.
+name: images
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Etiqueta de versión ya publicada, como v1.0.0"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+  REGISTRY: ghcr.io
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - image: emiteya-backend
+            dockerfile: deploy/backend.Dockerfile
+            target: runtime
+            build-args: ""
+          - image: emiteya-migrate
+            dockerfile: deploy/backend.Dockerfile
+            target: migrate
+            build-args: ""
+          - image: emiteya-frontend
+            dockerfile: deploy/frontend.Dockerfile
+            target: runtime
+            build-args: |
+              API_INTERNAL_URL=http://backend:4000
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      # Solo versiones finales con su número exacto: la etiqueta vX.Y.Z coincide con package.json.
+      - name: Comprobar la etiqueta de versión
+        run: |
+          if ! printf '%s' "$RELEASE_TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "La etiqueta $RELEASE_TAG no es vX.Y.Z." >&2
+            exit 1
+          fi
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$RELEASE_TAG" ]; then
+            echo "La etiqueta $RELEASE_TAG no coincide con la versión $version de package.json." >&2
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ env.RELEASE_TAG }}
+            type=semver,pattern={{major}},value=${{ env.RELEASE_TAG }}
+          flavor: |
+            latest=true
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image }}
+            org.opencontainers.image.description=EmiteYa: facturador electrónico open source para el SRI de Ecuador
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          build-args: ${{ matrix.build-args }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
