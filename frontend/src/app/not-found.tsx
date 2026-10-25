@@ -1,20 +1,21 @@
-// Dirección inexistente (adopt-premium-design-foundation-and-shell, design D16). Fuera del shell y sin
-// pedir datos de la empresa. No hay una ruta comodín: `next.config.ts` reescribe `/api/:path*` como
-// `fallback` después de las rutas dinámicas, y un comodín taparía la API.
+// Dirección inexistente (adopt-premium-design-foundation-and-shell, design D16; add-shell-not-found-page).
+// Con sesión monta el shell; sin sesión, la página sola (`NotFoundScreen`). No hay una ruta comodín:
+// `next.config.ts` reescribe `/api/:path*` como `fallback` después de las rutas dinámicas, y un
+// comodín taparía la API.
 import type { Metadata } from "next";
-import { RouteNotFound } from "@/components/route-states/route-states";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
+import { ShellSkeleton } from "@/components/shell/app-shell";
+import { NotFoundScreen } from "@/components/shell/not-found-screen";
+import { SIDEBAR_COOKIE_NAME, sidebarDefaultOpen } from "@/lib/navigation/sidebar-state";
 
 export const metadata: Metadata = { title: "Página no encontrada · EmiteYa" };
 
-export default function NotFound() {
+export default async function NotFound() {
+  const open = sidebarDefaultOpen((await cookies()).get(SIDEBAR_COOKIE_NAME)?.value);
   return (
-    <div className="flex min-h-svh flex-col">
-      <header className="flex h-12 items-center border-b px-4">
-        <span className="text-base font-semibold">EmiteYa</span>
-      </header>
-      <main id="contenido" className="flex flex-1 items-center justify-center px-4 py-6">
-        <RouteNotFound />
-      </main>
-    </div>
+    <Suspense fallback={<ShellSkeleton />}>
+      <NotFoundScreen sidebarDefaultOpen={open} />
+    </Suspense>
   );
 }

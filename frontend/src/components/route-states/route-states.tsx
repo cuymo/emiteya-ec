@@ -3,9 +3,10 @@
 // inexistente» y «Destino no permitido»). Componen los primitivos derivados de la plantilla `empty`,
 // `button` y `skeleton`, con mensajes fijos en español: nunca muestran detalles técnicos, trazas, JSON
 // ni identificadores internos.
-import { FileQuestion, Lock, TriangleAlert } from "lucide-react";
+import { House, Lock, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -83,15 +84,35 @@ export function RouteError({ onRetry }: { onRetry: () => void }) {
   );
 }
 
-/** La dirección no corresponde a ninguna pantalla. */
+/**
+ * La dirección no corresponde a ninguna pantalla (add-shell-not-found-page): el logo en el centro,
+ * «Oops…», qué pasó y el camino de vuelta a Inicio. Con sesión va dentro del shell; sin ella, sola.
+ */
 export function RouteNotFound() {
   return (
-    <RouteMessage
-      icon={<FileQuestion aria-hidden="true" />}
-      title="Esta página no existe"
-      description="La dirección que abriste no corresponde a ninguna pantalla de EmiteYa."
-      action={<HomeLink />}
-    />
+    <section
+      aria-labelledby="no-encontrada-titulo"
+      data-slot="route-not-found"
+      className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center"
+    >
+      <BrandLogo className="h-20" />
+      <h1 id="no-encontrada-titulo" className="text-3xl font-bold tracking-tight">
+        Oops…
+      </h1>
+      <div className="flex flex-col gap-1.5">
+        <p className="text-base font-medium">No encontramos la página que buscas.</p>
+        <p className="text-sm text-foreground-muted">
+          Puede que la dirección esté mal escrita o que la página ya no exista. Desde Inicio puedes
+          seguir trabajando.
+        </p>
+      </div>
+      <Button asChild size="default" className="mt-2">
+        <Link href="/">
+          <House aria-hidden="true" data-icon="inline-start" />
+          Volver a Inicio
+        </Link>
+      </Button>
+    </section>
   );
 }
 

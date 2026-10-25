@@ -186,7 +186,7 @@ test.describe("shell premium", () => {
     const { page, recorder } = await open(browser, "/no-existe", {
       scenario: { persona: "anonymous" },
     });
-    await expect(page.getByRole("heading", { name: "Esta página no existe" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Oops…" })).toBeVisible();
     await finish(page, recorder, "route-not-found");
   });
 

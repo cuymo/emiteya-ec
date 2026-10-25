@@ -1,13 +1,14 @@
 // Estados de ruta y destino no permitido (spec web-application-shell; adopt-premium-design-foundation-
-// and-shell, design D11 y D16): carga y error dentro del shell, dirección inexistente fuera de él y la
-// guarda síncrona que nunca monta el contenido protegido ni pide sus datos.
+// and-shell, design D11 y D16): carga y error dentro del shell, dirección inexistente dentro del shell
+// con sesión y sola sin ella (add-shell-not-found-page), y la guarda síncrona que nunca monta el
+// contenido protegido ni pide sus datos.
 import { fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ScreenError from "@/app/(app)/error";
 import Loading from "@/app/(app)/loading";
-import NotFound from "@/app/not-found";
+import { NotFoundScreen } from "@/components/shell/not-found-screen";
 import { UsersScreen } from "@/features/users/users-screen";
-import { OPERATOR_ME, mockApi, navigation, renderApp } from "./harness";
+import { OPERATOR_ME, errorBody, mockApi, navigation, renderApp } from "./harness";
 import { api, renderShell } from "./shell-harness";
 
 beforeEach(() => {
@@ -74,13 +75,33 @@ describe("error inesperado en una pantalla", () => {
 });
 
 describe("dirección inexistente", () => {
-  it("dice que la página no existe, con la marca y un enlace a Inicio, sin pedir datos", () => {
-    const calls = mockApi({});
-    renderApp(<NotFound />);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Esta página no existe");
-    expect(screen.getByRole("link", { name: "Ir a Inicio" }).getAttribute("href")).toBe("/");
-    expect(screen.getByText("EmiteYa")).toBeDefined();
-    expect(calls).toEqual([]);
+  it("sin sesión sale sola: logo, «Oops…», el mensaje y Volver a Inicio, sin pedir datos de la empresa", async () => {
+    navigation.pathname = "/no-existe";
+    const calls = mockApi({
+      "GET /api/v1/me": () => ({
+        status: 401,
+        body: errorBody("UNAUTHENTICATED", "Inicia sesión."),
+      }),
+    });
+    renderApp(<NotFoundScreen sidebarDefaultOpen />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Oops…" })).toBeDefined();
+    expect(screen.getByText("No encontramos la página que buscas.")).toBeDefined();
+    expect(screen.getByRole("link", { name: "Volver a Inicio" }).getAttribute("href")).toBe("/");
+    expect(
+      document.querySelector("[data-slot=route-not-found] [data-slot=brand-logo]"),
+    ).not.toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Navegación principal" })).toBeNull();
+    expect(calls.map((call) => call.key)).toEqual(["GET /api/v1/me"]);
+    expect(navigation.replace).not.toHaveBeenCalled();
+  });
+
+  it("con sesión sale dentro del shell, con la barra lateral", async () => {
+    navigation.pathname = "/no-existe";
+    api();
+    renderApp(<NotFoundScreen sidebarDefaultOpen />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Oops…" })).toBeDefined();
+    expect(mainNav()).toBeDefined();
+    expect(screen.getByRole("link", { name: "Volver a Inicio" }).getAttribute("href")).toBe("/");
   });
 });
 
