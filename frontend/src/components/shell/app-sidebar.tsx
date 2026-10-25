@@ -4,7 +4,8 @@
 // frontend/THIRD_PARTY_NOTICES.md): los grupos y destinos salen del modelo de rutas canónico y del rol
 // de la sesión; sin tarjeta de soporte, Inbox, insignias ni navegación de demostración. En móvil, los
 // grupos se pliegan (navigation-responsive.md), con el del destino actual abierto. Inicio y Reportes
-// van sueltos, sin título, y una línea separa los bloques (reorganize-main-navigation). La sección
+// van sueltos, sin título, y una línea separa los bloques (reorganize-main-navigation). Debajo de
+// Inicio, «Primeros pasos» con sus pendientes, solo mientras la empresa no pueda emitir. La sección
 // Configuración es un solo enlace después de Reportes, a su primera pestaña que el rol ve: sus
 // secciones son pestañas de una página (decisión del propietario, 2026-10-16). El destino actual se
 // desplaza a la vista de la barra en la carga y en cada cambio de ruta (design D23).
@@ -13,7 +14,7 @@
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Fragment, useEffect, useRef, type RefObject } from "react";
+import { Fragment, useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useSession } from "@/components/session";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -30,7 +31,9 @@ import {
   SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useCompanyStatus } from "@/features/company/company-api";
 import {
+  PRIMEROS_PASOS,
   permissionsOf,
   resolveRoute,
   visibleGroups,
@@ -60,7 +63,16 @@ function DestinationLink({ destination, active }: { destination: Destination; ac
   );
 }
 
-function GroupMenu({ group, activeHref }: { group: NavGroup; activeHref: string | undefined }) {
+function GroupMenu({
+  group,
+  activeHref,
+  extra,
+}: {
+  group: NavGroup;
+  activeHref: string | undefined;
+  /** Un destino que el grupo agrega según el estado, como Primeros pasos bajo Inicio. */
+  extra?: ReactNode;
+}) {
   return (
     <SidebarMenu>
       {group.destinations.map((destination) => (
@@ -70,7 +82,46 @@ function GroupMenu({ group, activeHref }: { group: NavGroup; activeHref: string 
           active={destination.href === activeHref}
         />
       ))}
+      {extra}
     </SidebarMenu>
+  );
+}
+
+/**
+ * «Primeros pasos» debajo de Inicio (redesign-dashboard-indicators, decisión del propietario del
+ * 2026-10-24): solo mientras la empresa no pueda emitir, con el número de requisitos pendientes.
+ * Con la empresa lista, o mientras se consulta, no aparece.
+ */
+function SetupNavItem({ active }: { active: boolean }) {
+  const { isMobile, setOpenMobile } = useSidebar();
+  const readiness = useCompanyStatus().data?.readiness;
+  if (!readiness || readiness.ready) return null;
+  const pending = readiness.checks.filter((check) => check.status === "PENDING").length;
+  const Icon = PRIMEROS_PASOS.icon;
+  const count = pending === 1 ? "1 pendiente" : `${pending} pendientes`;
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={active} tooltip={`${PRIMEROS_PASOS.label} · ${count}`}>
+        <Link
+          href={PRIMEROS_PASOS.href}
+          aria-current={active ? "page" : undefined}
+          data-tour="primeros-pasos"
+          onClick={() => {
+            if (isMobile) setOpenMobile(false);
+          }}
+        >
+          <Icon aria-hidden="true" />
+          <span>{PRIMEROS_PASOS.label}</span>
+          <span className="sr-only">, {count}</span>
+          <span
+            aria-hidden="true"
+            className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-warning px-1.5 text-xs leading-none font-semibold text-warning-foreground tabular-nums group-data-[collapsible=icon]:hidden"
+          >
+            {pending}
+          </span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
@@ -85,7 +136,15 @@ function NavSection({ group, activeHref }: { group: NavGroup; activeHref: string
     return (
       <SidebarGroup className="py-1">
         <SidebarGroupContent>
-          <GroupMenu group={group} activeHref={activeHref} />
+          <GroupMenu
+            group={group}
+            activeHref={activeHref}
+            extra={
+              group.id === "inicio" ? (
+                <SetupNavItem active={activeHref === PRIMEROS_PASOS.href} />
+              ) : undefined
+            }
+          />
         </SidebarGroupContent>
       </SidebarGroup>
     );

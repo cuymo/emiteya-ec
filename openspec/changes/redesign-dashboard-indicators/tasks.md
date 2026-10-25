@@ -13,5 +13,5 @@
 
 ## 4. Primeros pasos fuera de Inicio (decisión del propietario, 2026-10-24)
 
-- [x] 4.1 Quitar los requisitos pendientes del tablero, agregar la página `/primeros-pasos` y el botón «Falta configurar» de la barra superior con el número de pendientes, y apuntar el recorrido al botón; verificar con pruebas del tablero, del botón, de la página, del modelo de rutas y del recorrido.
-- [x] 4.2 Actualizar la documentación y revisar el botón y la página en escritorio y teléfono.
+- [x] 4.1 Quitar los requisitos pendientes del tablero, agregar la página `/primeros-pasos` y la opción «Primeros pasos» debajo de Inicio en la barra lateral con el número de pendientes (sin botón en la barra superior, decisión del propietario del 2026-10-24), y apuntar el recorrido a ella; verificar con pruebas del tablero, de la opción, de la página, del modelo de rutas y del recorrido.
+- [x] 4.2 Actualizar la documentación y revisar la opción y la página en escritorio y teléfono.

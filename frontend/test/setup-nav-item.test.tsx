@@ -1,6 +1,7 @@
-// «Falta configurar» en la barra superior y la página «Primeros pasos» (redesign-dashboard-indicators,
-// tarea 4.1): el botón con el número de pendientes solo mientras la empresa no pueda emitir, y la
-// página con los requisitos y el enlace a resolverlos según el rol.
+// «Primeros pasos» en la barra lateral y su página (redesign-dashboard-indicators, tarea 4.1, con la
+// decisión del propietario del 2026-10-24): la opción debajo de Inicio, con el número de pendientes,
+// solo mientras la empresa no pueda emitir; y la página con los requisitos y el enlace a resolverlos
+// según el rol. La barra superior no lleva ningún botón.
 import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionGate } from "@/components/session";
@@ -34,25 +35,38 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("«Falta configurar» en la barra superior", () => {
-  it("con requisitos pendientes lleva a Primeros pasos y dice cuántos faltan", async () => {
+describe("Primeros pasos en la barra lateral", () => {
+  const nav = () => screen.getByRole("navigation", { name: "Navegación principal" });
+
+  it("con requisitos pendientes aparece debajo de Inicio, con cuántos faltan", async () => {
     api({ routes: { "GET /api/v1/company/status": () => status(["SIGNING_CERTIFICATE"]) } });
     renderShell();
-    const link = await screen.findByRole("link", {
-      name: "Falta configurar: 1 requisito pendiente para emitir",
-    });
+    const link = await within(
+      await screen.findByRole("navigation", { name: "Navegación principal" }),
+    ).findByRole("link", { name: "Primeros pasos, 1 pendiente" });
     expect(link.getAttribute("href")).toBe("/primeros-pasos");
-    expect(link.closest("header")).not.toBeNull();
-    expect(link.textContent).toContain("Falta configurar");
-    expect(link.textContent).toContain("1");
+    const labels = within(nav())
+      .getAllByRole("link")
+      .map((item) => item.getAttribute("href"));
+    expect(labels.slice(0, 2)).toEqual(["/", "/primeros-pasos"]);
+    expect(screen.queryByRole("link", { name: /Falta configurar/ })).toBeNull();
   });
 
-  it("con la empresa lista no se muestra", async () => {
+  it("con la empresa lista no aparece", async () => {
     api({ routes: { "GET /api/v1/company/status": () => status([]) } });
     renderShell();
     await screen.findByText("contenido");
     await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(screen.queryByRole("link", { name: /Falta configurar/ })).toBeNull();
+    expect(within(nav()).queryByRole("link", { name: /Primeros pasos/ })).toBeNull();
+  });
+
+  it("queda marcada como el destino actual en su página", async () => {
+    navigation.pathname = "/primeros-pasos";
+    api({ routes: { "GET /api/v1/company/status": () => status(["SIGNING_CERTIFICATE"]) } });
+    renderShell();
+    const sidebar = await screen.findByRole("navigation", { name: "Navegación principal" });
+    const link = await within(sidebar).findByRole("link", { name: "Primeros pasos, 1 pendiente" });
+    expect(link.getAttribute("aria-current")).toBe("page");
   });
 });
 

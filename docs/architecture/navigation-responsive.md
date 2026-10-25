@@ -64,9 +64,11 @@ Shortened on 2026-10-24 (`reorganize-main-navigation`). The groups and destinati
   - **Exception:** inside a document, registering a party stays in `PartyDialog`, so the draft is
     not left behind. It shares the fields and the save logic of `party-form.tsx`.
 
-- **Primeros pasos** (`/primeros-pasos`, redesign-dashboard-indicators) is outside the sidebar too:
-  while the company cannot emit, the topbar shows «Falta configurar» with the number of pending
-  requirements, before «Buscar», and it disappears once the company is ready. The page lists the
+- **Primeros pasos** (`/primeros-pasos`, redesign-dashboard-indicators): while the company cannot
+  emit, the sidebar shows it right below Inicio, in the same loose block, with the number of
+  pending requirements in an amber badge (hidden when the sidebar is collapsed; the tooltip and the
+  accessible name keep the count). It disappears once the company is ready. The topbar has no
+  button for it (owner decision, 2026-10-24). The page lists the
   requirements with the link to solve each one when the role can; the palette finds it by
   «requisitos» or «falta configurar». Inicio no longer shows the requirements.
 - **Mi cuenta** lives in the account menu, not in the sidebar. It is a profile page: the avatar

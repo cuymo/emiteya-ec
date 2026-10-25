@@ -43,8 +43,8 @@ export const TOUR_SEGMENTS: readonly TourSegment[] = [
         selector: anchor("primeros-pasos"),
         title: "Lo que falta para emitir",
         description:
-          "Mientras tu empresa no pueda emitir, este botón te lleva a Primeros pasos: qué completar y dónde hacerlo.",
-        side: "bottom",
+          "Mientras tu empresa no pueda emitir, Primeros pasos aparece debajo de Inicio: qué completar y dónde hacerlo.",
+        side: "right",
       },
       {
         selector: anchor("inicio-indicadores"),

@@ -382,16 +382,24 @@ export const STATES: State[] = [
     act: (page) => advanceTour(page, "3. Emite la factura"),
   },
   // Primeros pasos fuera de Inicio (redesign-dashboard-indicators, tarea 4.1): la página con los
-  // requisitos y, en la barra superior, «Falta configurar» con el número de pendientes.
+  // requisitos y, en la barra lateral, «Primeros pasos» debajo de Inicio con sus pendientes.
   {
     route: "primeros-pasos",
     state: "pendiente",
     path: "/primeros-pasos",
     group: "shell",
     widths: ["1440", "390"],
-    ready: async (page) => {
-      await expect(page.getByRole("list", { name: "Requisitos" })).toBeVisible();
-      await expect(page.getByRole("link", { name: /^Falta configurar/ })).toBeVisible();
+    ready: (page) => expect(page.getByRole("list", { name: "Requisitos" })).toBeVisible(),
+    act: async (page, width) => {
+      // En el teléfono, la opción vive en el panel de navegación.
+      if (width.viewport.width < 768) {
+        await page.getByRole("button", { name: "Abrir navegación" }).click();
+      }
+      await expect(
+        page
+          .getByRole("navigation", { name: "Navegación principal" })
+          .getByRole("link", { name: /^Primeros pasos/ }),
+      ).toBeVisible();
     },
   },
   // Barra superior en cada ambiente, sobre Facturas.

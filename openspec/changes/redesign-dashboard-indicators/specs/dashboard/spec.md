@@ -37,7 +37,7 @@ Inicio SHALL mostrar el tablero a quien puede consultar facturas, y solo la prep
 
 #### Scenario: Empresa que no puede emitir
 - **WHEN** un administrador abre Inicio en una empresa sin firma electrónica
-- **THEN** el tablero no muestra los requisitos pendientes, y la barra superior ofrece «Falta configurar», que lleva a «Primeros pasos» con el requisito pendiente y la forma de resolverlo
+- **THEN** el tablero no muestra los requisitos pendientes, y la barra lateral ofrece «Primeros pasos» debajo de Inicio, con el requisito pendiente y la forma de resolverlo
 
 #### Scenario: Sin comprobantes
 - **WHEN** un usuario abre Inicio en una empresa que todavía no emite
