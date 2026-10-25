@@ -19,6 +19,6 @@
     "openapi:check": "node --conditions=development scripts/generate-openapi.ts --check"
   },
   "dependencies": {
-    "zod": "4.6.5"
+    "zod": "4.6.6"
   }
 }

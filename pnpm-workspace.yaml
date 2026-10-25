@@ -12,6 +12,11 @@ overrides:
   "@prisma/client": 7.10.0
   "@prisma/adapter-pg": 7.10.0
   "@prisma/engines": 7.10.0
+  # Una sola versión corregida en todo el árbol: better-auth trae next como dependencia par
+  # (GHSA-2464-fhr4-w9xw y otros, corregidos en 16.4.1) y la CLI de OpenSpec fija zod 4.6.5
+  # (GHSA-mrhx-c7xc-m3w5, corregido en 4.6.6).
+  next: 16.4.3
+  zod: 4.6.6
 
 # Scripts de instalación aprobados de forma explícita (motores de Prisma).
 allowBuilds:

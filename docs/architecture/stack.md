@@ -95,7 +95,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | Acciones de GitHub | `actions/checkout` v5.1.0 (`fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09`) y `actions/setup-node` v5.0.0 (`a0853c24544627f65ddf259abe73b1d18a591444`), fijadas por commit | En `verify.yml`, `security.yml` y `deployment.yml`, con la versión en un comentario (ADR 0026). Al fijarlas, las etiquetas `v5` apuntaban a esos mismos commits. Actualizarlas es un mantenimiento revisado; las imágenes de contenedor van por etiqueta exacta, sin digest (ADR 0027). |
 | CLI de OpenSpec | `@fission-ai/openspec` 1.14.0, versión exacta, solo desarrollo (MIT) | Valida las specs y los cambios con `corepack pnpm openspec:validate`, dentro de `verify` (`pin-openspec-ci-validation`). Sin scripts de instalación; la cubre `security:dependencies`. Actualizarla es un cambio revisado que regenera también los archivos de agentes con `openspec update`. |
 | Express | 5.2.1 | Validada por S-1. |
-| Zod | 4.6.5 | Misma major que Better Auth. |
+| Zod | 4.6.6 | Misma major que Better Auth. |
 | Prisma / @prisma/client / @prisma/adapter-pg | 7.10.0 | Generador `prisma-client`. |
 | PostgreSQL | 17 (`postgres:17-alpine`, por etiqueta y sin digest) | Compose de desarrollo, CI y topología de producción de referencia; el respaldo y la restauración usan las herramientas de esa misma imagen (ADR 0027). |
 | Imagen base de Node | `node:24.21.0-bookworm-slim`, versión exacta y sin digest | Imágenes de producción del backend y del frontend (`deploy/`, ADR 0027). Debian con OpenSSL 3, que necesita el `schema-engine` de las migraciones. |
@@ -103,7 +103,7 @@ Versiones de la base técnica (`bootstrap-application`); `check:versions` impide
 | pino / pino-http | 10.3.1 / 11.0.0 | |
 | @prometheus-io/client | 0.16.1 | Sucesor oficial de `prom-client`. |
 | helmet | 8.3.0 | |
-| Next.js / React | 16.3.8 / 19.3.0 | |
+| Next.js / React | 16.4.3 / 19.3.0 | |
 | Tailwind CSS | 4.3.3 | |
 | better-auth / @better-auth/core / CLI `auth` | 1.7.7 | Versión validada por S-1; se actualiza solo con los tests de contrato (`authentication.md`). |
 | radix-ui | 1.6.7 | Primitivas accesibles de shadcn/ui (diálogo, menú, tooltip, grupo de radio, chips). |

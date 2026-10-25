@@ -9,6 +9,12 @@ El detalle de cada cambio, con su diseño y su especificación, está en
 
 ## [Sin publicar]
 
+### Seguridad
+
+- Next.js 16.4.3 (avisos críticos GHSA-2464-fhr4-w9xw y GHSA-673q-mjm6-r5xr de ejecución remota
+  de código, y GHSA-p3m5-59mp-jv5r de denegación de servicio), zod 4.6.6, y versiones corregidas
+  de body-parser, undici y vite en el árbol de dependencias.
+
 ## [1.0.0] - 2026-10-25
 
 Primera versión pública, bajo la licencia AGPL-3.0.
