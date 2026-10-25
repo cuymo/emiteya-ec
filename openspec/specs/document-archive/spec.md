@@ -36,7 +36,7 @@ El sistema SHALL listar en una bandeja los comprobantes fiscales de la empresa d
 - **THEN** la bandeja la muestra con su proveedor, rotulado "Proveedor" y nunca "Comprador", y con su importe total
 
 ### Requirement: Filtros de la bandeja
-La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, estado, identificación del receptor, número, establecimiento y punto de emisión, combinables entre sí. La identificación del receptor encuentra una guía de remisión por cualquiera de sus destinatarios. Un filtro con un valor inválido SHALL rechazarse sin consultar.
+La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, estado, identificación del receptor, número, establecimiento, punto de emisión y estado del último envío por correo, combinables entre sí. La identificación del receptor encuentra una guía de remisión por cualquiera de sus destinatarios. Un filtro con un valor inválido SHALL rechazarse sin consultar.
 
 #### Scenario: Rango de fechas
 - **WHEN** un usuario filtra del 1 al 15 de octubre de 2026
@@ -57,6 +57,10 @@ La bandeja SHALL filtrar por rango de fechas de emisión, tipo de comprobante, e
 #### Scenario: Identificación de un destinatario de una guía
 - **WHEN** un usuario filtra por la identificación del segundo destinatario de una guía de remisión
 - **THEN** la bandeja contiene esa guía
+
+#### Scenario: Correo no enviado
+- **WHEN** un usuario filtra por el correo fallido
+- **THEN** la bandeja contiene solo los comprobantes autorizados cuyo último envío por correo falló
 
 ### Requirement: Documentos disponibles de un comprobante
 Para cada comprobante, el sistema SHALL indicar qué documentos están disponibles y el estado de la generación de su RIDE, en la bandeja y en su detalle. El RIDE solo está disponible si el comprobante está autorizado y su RIDE existe; el XML autorizado, solo si el SRI lo devolvió; el XML firmado, desde que el comprobante está firmado. Las acciones ofrecidas dependen de esa disponibilidad.
@@ -359,7 +363,7 @@ La solicitud de impresión SHALL ser una acción explícita, distinta de la lect
 - **THEN** no se registra ninguna solicitud de impresión
 
 ### Requirement: Historial de entregas
-El sistema SHALL registrar en un historial de solo agregado cada descarga servida y cada solicitud de impresión, con el comprobante, el tipo y el hash del documento, el actor y el momento, nunca sus bytes. Una descarga significa que la aplicación inició una respuesta autorizada con el documento, no que el cliente lo guardó; una solicitud de impresión, que un usuario la pidió. Ninguna significa que el receptor lo recibió. El historial no se duplica en la auditoría.
+El sistema SHALL registrar en un historial de solo agregado cada descarga servida y cada solicitud de impresión, con el comprobante, el tipo y el hash del documento, el actor y el momento, nunca sus bytes. Una descarga significa que la aplicación inició una respuesta autorizada con el documento, no que el cliente lo guardó; una solicitud de impresión, que un usuario la pidió. Ninguna significa que el receptor lo recibió. El historial no se duplica en la auditoría. Los envíos por correo tienen su propio historial (`email-delivery`).
 
 #### Scenario: Descarga registrada
 - **WHEN** se sirve una descarga del RIDE o de un XML
@@ -387,7 +391,7 @@ El sistema SHALL registrar en un historial de solo agregado cada descarga servid
 
 #### Scenario: Sin entrega confirmada ni correo
 - **WHEN** se consulta el historial
-- **THEN** no hay entregas por correo ni entregas marcadas como recibidas o impresas
+- **THEN** no hay entregas marcadas como recibidas o impresas ni entregas por correo: los envíos por correo están en su propio historial, y el envío por el sistema no genera una descarga
 
 #### Scenario: Sin duplicar la auditoría
 - **WHEN** se registra una entrega

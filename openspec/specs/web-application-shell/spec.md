@@ -507,8 +507,8 @@ pieza azul primario dentro de su pista. Ninguna SHALL distinguirse solo por el c
 
 ### Requirement: Configuración en pestañas
 Las secciones de Configuración SHALL presentarse en una sola página con pestañas, en este orden:
-Usuarios, Empresa, Establecimientos, Firma electrónica, Catálogos fiscales, Ambiente y Portabilidad
-de datos, solo las que el rol ve. La dirección de la antigua pestaña Secuenciales SHALL llevar a
+Usuarios, Empresa, Establecimientos, Firma electrónica, Correos, Catálogos fiscales, Ambiente y
+Portabilidad de datos, solo las que el rol ve. La dirección de la antigua pestaña Secuenciales SHALL llevar a
 Establecimientos. Cada pestaña SHALL ser un enlace a la dirección de su
 sección, que conserva su enlace directo, su permiso y su título, y la sección abierta SHALL
 anunciarse como página actual. La dirección `/configuracion` SHALL llevar a la primera pestaña que
@@ -519,7 +519,7 @@ sin desplazar la página, con la actual a la vista.
 
 #### Scenario: Administrador
 - **WHEN** un administrador abre Usuarios
-- **THEN** ve las siete pestañas en ese orden, con Usuarios marcada como página actual
+- **THEN** ve las ocho pestañas en ese orden, con Usuarios marcada como página actual
 
 #### Scenario: Pestañas verticales en escritorio
 - **WHEN** un administrador abre Empresa en una pantalla de escritorio
@@ -532,6 +532,10 @@ sin desplazar la página, con la actual a la vista.
 #### Scenario: Enlace directo
 - **WHEN** un administrador abre la dirección de Firma electrónica
 - **THEN** ve la pestaña Firma electrónica abierta, con las demás pestañas para cambiar de sección
+
+#### Scenario: Correos
+- **WHEN** un administrador abre la dirección de Correos
+- **THEN** ve la pestaña Correos abierta, después de Firma electrónica
 
 ### Requirement: Crear un comprobante sobre su lista
 «Nueva nota de crédito», «Nueva nota de débito» y «Nueva retención» SHALL abrir, encima de la lista y

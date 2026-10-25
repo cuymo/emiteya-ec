@@ -8,7 +8,7 @@ su identificación validada con las reglas oficiales, y garantiza el consumidor 
 ## Requirements
 
 ### Requirement: Catálogo único de terceros
-El sistema SHALL permitir registrar en la empresa terceros reutilizables en cualquier rol, con tipo y número de identificación, razón social o nombres y, opcionalmente, dirección, correo, teléfono y roles. Los roles cliente, proveedor y transportista son opcionales y combinables, y solo clasifican: un tercero sin roles existe y puede recibir un uso más adelante.
+El sistema SHALL permitir registrar en la empresa terceros reutilizables en cualquier rol, con tipo y número de identificación, razón social o nombres y, opcionalmente, dirección, hasta tres correos distintos, teléfono y roles. Los roles cliente, proveedor y transportista son opcionales y combinables, y solo clasifican: un tercero sin roles existe y puede recibir un uso más adelante.
 
 #### Scenario: Alta de un tercero
 - **WHEN** un usuario registra un tercero con RUC `1790012345001` y razón social "Comercial Andina S.A."
@@ -22,9 +22,17 @@ El sistema SHALL permitir registrar en la empresa terceros reutilizables en cual
 - **WHEN** un usuario registra un tercero sin ningún rol
 - **THEN** el tercero existe y aparece en las búsquedas sin filtro de rol, pero no al filtrar por un rol
 
+#### Scenario: Varios correos
+- **WHEN** un usuario registra un tercero con los correos `compras@cliente.ec` y `contabilidad@cliente.ec`
+- **THEN** el tercero queda con los dos correos, en ese orden
+
 #### Scenario: Datos fuera de sus límites
-- **WHEN** un usuario registra un tercero sin razón social, con una razón social de más de 300 caracteres o con un correo con formato inválido
+- **WHEN** un usuario registra un tercero sin razón social, con una razón social de más de 300 caracteres, con un correo con formato inválido, con más de tres correos o con un correo repetido
 - **THEN** el sistema rechaza la solicitud indicando el campo, y no se crea ningún tercero
+
+#### Scenario: Tercero registrado antes con un correo
+- **WHEN** se consulta un tercero que tenía un solo correo antes de este cambio
+- **THEN** el tercero tiene ese correo como el primero de su lista
 
 ### Requirement: Identificación validada con las reglas oficiales
 El sistema SHALL validar la identificación de un tercero con la regla de formato que publica el catálogo fiscal para su tipo, vigente en la fecha de la operación: RUC de 13 dígitos terminado en 001, cédula de 10 dígitos, y pasaporte o identificación del exterior de 1 a 20 caracteres sin saltos de línea. El sistema MUST NOT rechazar una identificación por un algoritmo de dígito verificador que el SRI no exige. El tipo de venta a consumidor final está reservado al consumidor final del sistema.
