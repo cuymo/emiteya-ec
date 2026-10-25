@@ -121,9 +121,15 @@ Internet. El detalle está en `docs/architecture/deployment.md` ("Topología de 
    `DATABASE_URL`, `BETTER_AUTH_SECRET` y el administrador inicial.
 2. Exporta las variables de Compose (`EMITEYA_ENV_FILE`, `EMITEYA_SECRETS_DIR`, `PUBLIC_ORIGIN` y,
    si la subred choca con la del host, `APP_SUBNET`, `APP_IP_RANGE` y `PROXY_APP_IP` juntas).
-3. Construye las imágenes y arranca:
+3. Descarga las imágenes publicadas de la versión, o constrúyelas, y arranca:
 
    ```bash
+   # Con las imágenes publicadas en GitHub Container Registry (linux/amd64)
+   export EMITEYA_IMAGE_PREFIX=ghcr.io/cuymo/ EMITEYA_IMAGE_TAG=1.0.0
+   docker compose -f deploy/compose.yaml pull
+   docker compose -f deploy/compose.yaml up -d --no-build
+
+   # O compilándolas en tu servidor
    docker compose -f deploy/compose.yaml build
    docker compose -f deploy/compose.yaml up -d
    ```
@@ -144,7 +150,7 @@ tiene salida. El uso real del SRI exige dos pasos deliberados del dueño, docume
 `docs/architecture/deployment.md`.
 
 **Actualización:** respalda la base, actualiza el repositorio a la versión nueva y repite el paso 3
-(`build` y `up -d`): Compose aplica las migraciones antes de recrear la API y la interfaz, y una
+(con las imágenes publicadas, cambia `EMITEYA_IMAGE_TAG` a la versión nueva): Compose aplica las migraciones antes de recrear la API y la interfaz, y una
 migración fallida deja la API sin arrancar.
 
 **Respaldo**, con las mismas variables de Compose:

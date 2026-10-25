@@ -25,6 +25,31 @@ Las imágenes se construyen desde la raíz del repositorio, con el contexto acot
 - **El contexto de build** admite solo los manifiestos del workspace, el código del backend, del frontend y de los contratos, y los XSD que copia el build. Excluye en cualquier nivel `node_modules`, `.next`, `dist`, archivos de entorno, PKCS#12, PFX, claves privadas y salidas locales. `corepack pnpm deployment:context` lo comprueba con archivos sintéticos y busca esos archivos en las imágenes construidas.
 - **Las dependencias de producción** de la API incluyen las dependencias entre pares que el lockfile resuelve para `better-auth` y `@prisma/client` (por ejemplo, el paquete `prisma` sin sus motores); no son dependencias de desarrollo del backend ni se ejecutan.
 
+#### Imágenes publicadas
+
+Cada versión `vX.Y.Z` publica las tres imágenes en GitHub Container Registry
+(`publish-container-images`, workflow `.github/workflows/images.yml`):
+
+| Imagen publicada | Objetivo |
+| --- | --- |
+| `ghcr.io/cuymo/emiteya-backend` | `runtime` del backend |
+| `ghcr.io/cuymo/emiteya-migrate` | `migrate` del backend |
+| `ghcr.io/cuymo/emiteya-frontend` | `runtime` de la interfaz, con `API_INTERNAL_URL=http://backend:4000` |
+
+- **Etiquetas:** la versión exacta (`1.0.0`), sus alias (`1.0`, `1`) y `latest`. Para producción,
+  fija la versión exacta.
+- **Plataforma:** solo `linux/amd64`.
+- **Procedencia y SBOM:** cada imagen lleva su atestación de procedencia (SLSA) y su SBOM, y las
+  etiquetas OCI con el origen, la versión y la licencia (`AGPL-3.0-only`).
+- **Cuándo se publica:** al empujar la etiqueta, o a mano desde Actions → images → Run workflow con
+  una etiqueta ya publicada. El workflow se niega si la etiqueta no es `vX.Y.Z` o no coincide con
+  la versión de `package.json`. Solo usa `GITHUB_TOKEN` con permiso de escritura de paquetes.
+- **La interfaz publicada** solo sirve para la topología de referencia, donde el servicio del
+  backend se llama `backend`. Con otra dirección interna, compila tu propia imagen.
+- **Usarlas:** con `EMITEYA_IMAGE_PREFIX=ghcr.io/cuymo/` y `EMITEYA_IMAGE_TAG=1.0.0`,
+  `docker compose -f deploy/compose.yaml pull` las descarga y `up -d --no-build` despliega con ellas.
+  Sin `EMITEYA_IMAGE_PREFIX`, el compose sigue compilando las imágenes locales.
+
 ## Environment
 
 Keep runtime configuration in environment variables:

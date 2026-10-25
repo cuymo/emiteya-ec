@@ -47,6 +47,9 @@ Primera versión pública, bajo la licencia AGPL-3.0.
   límites de intentos y secretos cifrados en reposo.
 - Despliegue de producción de referencia con Docker Compose (nginx con TLS, red privada y
   respaldos de PostgreSQL).
+- Imágenes publicadas en GitHub Container Registry (`ghcr.io/cuymo/emiteya-backend`,
+  `emiteya-migrate` y `emiteya-frontend`, `linux/amd64`) con procedencia y SBOM, para desplegar sin
+  compilar.
 - Escaneo de secretos y de dependencias en la verificación.
 
 [Sin publicar]: https://github.com/cuymo/emiteya-ec/compare/v1.0.0...HEAD
