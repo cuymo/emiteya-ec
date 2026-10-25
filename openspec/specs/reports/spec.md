@@ -7,11 +7,11 @@ Ofrecer a la empresa los cinco reportes operativos del ERS (Documentos emitidos,
 ## Requirements
 
 ### Requirement: Reportes de la empresa
-El sistema SHALL ofrecer exactamente cinco reportes: Documentos emitidos, Facturas, Retenciones, Inventario (con sus vistas Existencias y Movimientos) y Terceros. Cada reporte es un listado paginado de filas, con sus filtros y su exportación a XLSX. Los reportes no suman totales, no compensan comprobantes entre sí y no reemplazan obligaciones contables ni anexos tributarios.
+El sistema SHALL ofrecer exactamente cinco reportes: Documentos emitidos, Facturas, Retenciones, Inventario (con sus vistas Existencias y Movimientos) y Clientes y proveedores. Cada reporte es un listado paginado de filas, con sus filtros y su exportación a XLSX. Los reportes no suman totales, no compensan comprobantes entre sí y no reemplazan obligaciones contables ni anexos tributarios.
 
 #### Scenario: Los cinco reportes
 - **WHEN** un usuario con permiso abre Reportes
-- **THEN** puede elegir Documentos emitidos, Facturas, Retenciones, Inventario o Terceros, y ningún otro
+- **THEN** puede elegir Documentos emitidos, Facturas, Retenciones, Inventario o Clientes y proveedores, y ningún otro
 
 #### Scenario: Sin totales ni compensación
 - **WHEN** la empresa tiene una factura de 100.00, una nota de crédito de 20.00 y una nota de débito de 10.00 sobre ella, todas autorizadas
@@ -108,16 +108,16 @@ La vista Movimientos de Inventario SHALL listar los movimientos registrados del 
 - **WHEN** un usuario consulta o exporta Inventario
 - **THEN** elige Existencias o Movimientos, y nunca recibe las dos en una misma tabla
 
-### Requirement: Reporte de terceros
-Terceros SHALL listar una fila por tercero de la empresa con su identificación, su razón social, su correo, su teléfono, sus roles y su estado, tal como están registrados hoy. Se filtra por rol, identificación y estado.
+### Requirement: Reporte de clientes y proveedores
+Clientes y proveedores SHALL listar una fila por tercero de la empresa con su identificación, su razón social, su correo, su teléfono, sus roles y su estado, tal como están registrados hoy. Se filtra por rol, identificación y estado.
 
 #### Scenario: Filtro por rol
-- **WHEN** un usuario filtra Terceros por el rol de proveedor
+- **WHEN** un usuario filtra Clientes y proveedores por el rol de proveedor
 - **THEN** el reporte lista solo los terceros con ese rol, con todos sus roles en la fila
 
 #### Scenario: Datos vigentes
 - **WHEN** un tercero corrige su correo
-- **THEN** el reporte de terceros muestra el correo vigente
+- **THEN** el reporte de clientes y proveedores muestra el correo vigente
 
 ### Requirement: Filtros de los reportes
 Cada reporte SHALL aplicar solo sus filtros mínimos del ERS, que viven en la URL de la pantalla: el rango de fechas, el tipo y el estado del comprobante, el establecimiento y el punto, la identificación del cliente o del sujeto retenido, el período fiscal, el producto y el tipo de movimiento, y el rol, la identificación y el estado del tercero, según el reporte. El atajo mensual solo fija el rango de fechas.
